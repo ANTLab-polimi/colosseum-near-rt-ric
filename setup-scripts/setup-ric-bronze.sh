@@ -25,6 +25,8 @@ else
     fi
 fi
 
+# echo "Ric interface ${RIC_INTERFACE}"
+
 export SRC=`dirname $0`
 . $SRC/setup-lib.sh
 
@@ -176,7 +178,8 @@ fi
  E2TERM_CONFIG_BIND="--mount type=bind,source=$E2TERMCONFFILE,destination=/opt/e2/config/config.conf,ro"
 
 export RIC_IP=`ifconfig ${RIC_INTERFACE} | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*'`
-
+# new_port="$(($E2TERM_SCTP_PORT+1000))"
+# echo "Ric ip ${new_port}"
 
 if [ "$arena" = true ]; then
     echo 'Starting local setup'
@@ -189,6 +192,13 @@ else
     $SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term -p ${RIC_IP}:${E2TERM_SCTP_PORT}:${E2TERM_SCTP_PORT}/sctp\
         --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
         $E2TERM_CONFIG_BIND e2term:bronze
+    # $SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term -p ${RIC_IP}:${new_port}:${E2TERM_SCTP_PORT}/sctp\
+    #     --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
+    #     $E2TERM_CONFIG_BIND e2term:bronze
+
+    # $SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term -p ${RIC_IP}:${E2TERM_SCTP_PORT}:${E2TERM_SCTP_PORT}/tcp\
+    #     --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
+    #     $E2TERM_CONFIG_BIND e2term:bronze
 fi
 
 exit 0
