@@ -115,7 +115,8 @@ typedef mapWrapper Sctp_Map_t;
 
 #define VOLUME_URL_SIZE 256
 // #define KA_MESSAGE_SIZE (5*2048)
-#define KA_MESSAGE_SIZE 10240
+// #define KA_MESSAGE_SIZE 10240
+#define KA_MESSAGE_SIZE 32768
 
 typedef struct sctp_params {
     uint16_t rmrPort = 0;
