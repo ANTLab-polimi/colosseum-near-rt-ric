@@ -144,25 +144,25 @@ remove_container() {
 }
 
 # create RIC various containers. Kill and remove them if they exist.
-remove_container db
+remove_container db 
 $SUDO docker run -d --network ric --ip $DBAAS_IP --name db dbaas:bronze
 
-remove_container e2rtmansim
+remove_container e2rtmansim 
 $SUDO docker run -d -it --network ric --ip $E2RTMANSIM_IP --name e2rtmansim e2rtmansim:bronze
 
-remove_container e2mgr
+remove_container e2mgr 
 $SUDO docker run -d -it --network ric --ip $E2MGR_IP -e RIC_ID=7b0000-000000/18 \
     -e DBAAS_PORT_6379_TCP_ADDR=$DBAAS_IP -e DBAAS_PORT_6379_TCP_PORT="6379" \
     -e DBAAS_SERVICE_HOST=$DBAAS_IP -e DBAAS_SERCE_PORT="6379" \
     --mount type=bind,source=$ROUTERFILE,destination=/opt/E2Manager/router.txt,ro \
     --name e2mgr e2mgr:bronze
 
-remove_container e2term
+remove_container e2term 
 E2TERMCONFFILE=`pwd`/e2term_config.conf
 if [ ! -e $E2TERMCONFFILE ]; then
 cat <<EOF >$E2TERMCONFFILE
 nano=38000
-loglevel=debug
+loglevel=info
 volume=log
 #the key name of the environment holds the local ip address
 #ip address of the E2T in the RMR
