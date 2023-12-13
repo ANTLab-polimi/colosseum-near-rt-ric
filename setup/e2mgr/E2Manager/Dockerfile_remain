@@ -20,26 +20,17 @@
 #   platform project (RICP).
 #
 
-# FROM nexus3.o-ran-sc.org:10004/o-ran-sc/bldr-ubuntu18-c-go:9-u18.04 as ubuntu
-FROM nexus3.o-ran-sc.org:10004/o-ran-sc/bldr-ubuntu20-c-go:1.1.1 as ubuntu
+
+FROM e2mgr-base:bronze
 
 WORKDIR /opt/E2Manager
-COPY . .
 
-# Install dependencies, compile and test the module
-RUN apt-get update \
-  && apt-get install -y sudo \
-  && apt-get --allow-releaseinfo-change update \
-  && apt upgrade -y
+COPY build-e2mgr-ubuntu-remain.sh .
+COPY Dockerfile_remain .
 
-ENV GOPATH=/root/go
-ENV PATH=$PATH:/opt/go/1.18/bin:$GOPATH/bin
+# RUN bash build-e2mgr-ubuntu-remain.sh
+RUN ./build-e2mgr-ubuntu-remain.sh
 
-RUN bash build-e2mgr-ubuntu.sh
-
-# # Build deployable container
-FROM ubuntu:18.04
-# FROM ubuntu:20.04
 
 RUN apt-get update && apt-get install -y \
   net-tools \
@@ -49,10 +40,10 @@ RUN apt-get update && apt-get install -y \
   jq \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=ubuntu /opt/E2Manager/router.txt /opt/E2Manager/main /opt/E2Manager/
-COPY --from=ubuntu /opt/E2Manager/resources/configuration.yaml /opt/E2Manager/resources/configuration.yaml
-COPY --from=ubuntu /opt/E2Manager/resources/rmr.verbose /tmp/rmr.verbose
-COPY --from=ubuntu /usr/local/lib/librmr_si.so.4 /usr/local/lib/librmr_si.so.4
+COPY --from=e2mgr-base /opt/E2Manager/router.txt /opt/E2Manager/main /opt/E2Manager/
+COPY --from=e2mgr-base /opt/E2Manager/resources/configuration.yaml /opt/E2Manager/resources/configuration.yaml
+COPY --from=e2mgr-base /opt/E2Manager/resources/rmr.verbose /tmp/rmr.verbose
+COPY --from=e2mgr-base /usr/local/lib/librmr_si.so.4 /usr/local/lib/librmr_si.so.4
 
 WORKDIR /opt/E2Manager
 ENV LD_LIBRARY_PATH=/usr/local/lib \

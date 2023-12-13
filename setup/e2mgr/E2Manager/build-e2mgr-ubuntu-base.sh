@@ -43,10 +43,11 @@ dpkg -i $rmrdev
 rm $rmrdev
 
 # required to find nng and rmr libs
+export LD_LIBRARY_PATH=/usr/local/lib
 # LD_LIBRARY_PATH=/usr/local/lib
-# export LD_LIBRARY_PATH=/usr/local/lib
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH-}:/usr/local/lib"
-export LIBRARY_PATH="${LIBRARY_PATH-}:/usr/local/lib"
+# export $LD_LIBRARY_PATH
+# LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH
 
 # go installs tools like go-acc to $HOME/go/bin
 # ubuntu minion path lacks go
@@ -82,11 +83,11 @@ export RMR_SEED_RT=$(pwd)/router_test.txt
 # writes to coverage.txt by default
 # SonarCloud accepts the text format
 
-go-acc $(go list ./... | grep -vE '(/mocks|/tests|/e2managererrors|/enums)')
+# go-acc $(go list ./... | grep -vE '(/mocks|/tests|/e2managererrors|/enums)')
 
 # # # TODO: drop rewrite of path prefix when SonarScanner is extended
 # # # rewrite the module name to a directory name in the coverage report
 # # # https://jira.sonarsource.com/browse/SONARSLANG-450
-sed -i -e 's/^e2mgr/E2Manager/' coverage.txt  
+# sed -i -e 's/^e2mgr/E2Manager/' coverage.txt  
 
-echo "--> e2mgr-build-ubuntu.sh ends"
+# echo "--> e2mgr-build-ubuntu.sh ends"

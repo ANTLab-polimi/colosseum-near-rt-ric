@@ -56,17 +56,31 @@ if [ ! $? -eq 0 ]; then
 fi
 
 # build e2mgr
+# inspect the base image
+$SUDO docker image inspect e2mgr-base:latest >/dev/null 2>&1
+if [ ! $? -eq 0 ]; then
+    cd e2mgr/E2Manager
+    # build the base image
+    ./build-e2mgr-ubuntu-base-image.sh
+    cd ../..
+fi
 $SUDO docker image inspect e2mgr:bronze >/dev/null 2>&1
 if [ ! $? -eq 0 ]; then
     cd e2mgr/E2Manager
-    $SUDO docker image inspect e2mgr:$tagvers >/dev/null 2>&1
-    if [ ! $? -eq 0 ]; then
-        $SUDO docker build -f Dockerfile -t e2mgr:$tagvers .
-    fi
-    $SUDO docker tag e2mgr:$tagvers e2mgr:bronze
-    $SUDO docker rmi e2mgr:$tagvers
+    ./build-e2mgr-ubuntu-base-image-remain.sh
     cd ../..
 fi
+# $SUDO docker image inspect e2mgr:bronze >/dev/null 2>&1
+# if [ ! $? -eq 0 ]; then
+#     cd e2mgr/E2Manager
+#     $SUDO docker image inspect e2mgr:$tagvers >/dev/null 2>&1
+#     if [ ! $? -eq 0 ]; then
+#         $SUDO docker build -f Dockerfile -t e2mgr:$tagvers .
+#     fi
+#     $SUDO docker tag e2mgr:$tagvers e2mgr:bronze
+#     $SUDO docker rmi e2mgr:$tagvers
+#     cd ../..
+# fi
 
 # build e2rtmansim
 $SUDO docker image inspect e2rtmansim:bronze >/dev/null 2>&1
