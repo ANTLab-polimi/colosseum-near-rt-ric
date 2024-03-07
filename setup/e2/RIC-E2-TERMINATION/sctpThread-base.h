@@ -66,16 +66,6 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/filesystem.hpp>
-// #include <boost/log/expressions/formatters/date_time.hpp>
-#include <boost/log/support/date_time.hpp>
-#include <boost/log/expressions/formatter.hpp>
-#include <boost/log/expressions/formatters/named_scope.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/date_time.hpp>
-#include <boost/date_time/gregorian/gregorian.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/trivial.hpp>
 
 #include <mdclog/mdclog.h>
 
@@ -117,9 +107,7 @@ namespace expr = boost::log::expressions;
 #define MAXEVENTS 128
 
 // #define RECEIVE_SCTP_BUFFER_SIZE (128 * 1024)
-// #define RECEIVE_SCTP_BUFFER_SIZE (512 * 1024)
-#define RECEIVE_SCTP_BUFFER_SIZE (256 * 1024)
-// #define RECEIVE_SCTP_BUFFER_SIZE 1024000
+#define RECEIVE_SCTP_BUFFER_SIZE 102400
 #define RECEIVE_XAPP_BUFFER_SIZE RECEIVE_SCTP_BUFFER_SIZE 
 
 typedef mapWrapper Sctp_Map_t;
@@ -128,7 +116,7 @@ typedef mapWrapper Sctp_Map_t;
 
 #define VOLUME_URL_SIZE 256
 // #define KA_MESSAGE_SIZE 32768
-#define KA_MESSAGE_SIZE 1024000
+#define KA_MESSAGE_SIZE 102400
 
 typedef struct sctp_params {
     uint16_t rmrPort = 0;

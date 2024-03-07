@@ -52,11 +52,6 @@
 #include <rapidjson/stringbuffer.h>
 #include <iostream>
 
-#include <time.h>
-#include <iostream>
-#include <string>
-#include <chrono>
-
 using namespace std;
 //using namespace std::placeholders;
 using namespace boost::filesystem;
@@ -298,41 +293,8 @@ int buildConfiguration(sctp_params_t &sctpParams) {
             keywords::rotation_size = 10 * 1024 * 1024,
             keywords::time_based_rotation = sinks::file::rotation_at_time_interval(posix_time::hours(1)),
             keywords::format = "%Message%"
-            // keywords::format =
-            // (
-            //     expr::stream
-            //         << expr::format_date_time< posix_time::ptime >("TimeStamp", "%Y-%m-%d %H:%M:%S")
-            //         << ": <" << logging::trivial::severity
-            //         << "> " << expr::smessage
-            // )
-            // keywords::format = "[%TimeStamp%]: %Message%" // use each tmpStr with time stamp
+            //keywords::format = "[%TimeStamp%]: %Message%" // use each tmpStr with time stamp
     );
-    auto fmtTimeStamp = expr::
-        format_date_time<posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f");
-    // auto fmtThreadId = expr::
-    //     attr<logging::attributes::current_thread_id::value_type>("ThreadID");
-    auto fmtSeverity =expr::
-        attr<logging::trivial::severity_level>("Severity");
-    // auto fmtScope = expr::format_named_scope("Scope",
-    //     keywords::format = "%n(%f:%l)",
-    //     keywords::iteration = expr::reverse,
-    //     keywords::depth = 2);
-    // boost::log::formatter logFmt =
-    //     expr::format("[%1%] (%2%) [%3%] [%4%] %5%")
-    //     % fmtTimeStamp % fmtThreadId % fmtSeverity % fmtScope
-    //     % expr::smessage;
-    boost::log::formatter logFmt =
-        expr::format("[%1%] [%2%] %3%")
-        % fmtTimeStamp % fmtSeverity
-        % expr::smessage;
-
-    boostLogger->set_formatter(logFmt);
-    
-//     boostLogger->set_formatter
-// (
-//     fmt::stream <<
-//       fmt::date_time<boost::posix_time::ptime>
-//         ("TimeStamp", keywords::format = "%Y-%m-%d %H:%M:%S.%f"));
 
     // Setup a destination folder for collecting rotated (closed) files --since the same volumn can use rename()
     boostLogger->locked_backend()->set_file_collector(sinks::file::make_collector(
@@ -730,37 +692,30 @@ void listener(sctp_params_t *params) {
                     mdclog_write(MDCLOG_DEBUG, "new message from SCTP, epoll flags are : %0x", events[i].events);
                 }
 
-                if ((rmrMessageBuffer.sendMessage!=nullptr) & (rmrMessageBuffer.sendMessage->len>0)){
-                    char printBuffer[102400]{};
-                    char *tmp = printBuffer;
-                    mdclog_write(MDCLOG_DEBUG, "Send message length = %d", rmrMessageBuffer.sendMessage->len);
-                    for (size_t i = 0; i < (size_t)rmrMessageBuffer.sendMessage->len; ++i) {
-                        snprintf(tmp, 3, "%02x", rmrMessageBuffer.sendMessage->payload[i]);
-                        tmp += 2;
-                    }
-                    printBuffer[rmrMessageBuffer.sendMessage->len] = 0;
-                    mdclog_write(MDCLOG_DEBUG, "Send message data =  : %s",
-                         printBuffer);
-                }else{
-                    mdclog_write(MDCLOG_DEBUG, "Send message is nullptr");
-                }
+                // if (rmrMessageBuffer.sendMessage!=nullptr){
+                //     char printBuffer[40960]{};
+                //     char *tmp = printBuffer;
+                //     for (size_t i = 0; i < (size_t)rmrMessageBuffer.sendMessage->len; ++i) {
+                //         snprintf(tmp, 3, "%02x", rmrMessageBuffer.sendMessage->payload[i]);
+                //         tmp += 2;
+                //     }
+                //     printBuffer[rmrMessageBuffer.sendMessage->len] = 0;
+                //     mdclog_write(MDCLOG_DEBUG, "Send message length = %d, &data =  : %s", rmrMessageBuffer.sendMessage->len,
+                //          printBuffer);
+                // }
 
-                if ((rmrMessageBuffer.rcvMessage!=nullptr) && (rmrMessageBuffer.rcvMessage->len>0)){
-                    char printBufferRec[102400]{};
-                    char *tmpRec = printBufferRec;
-                    mdclog_write(MDCLOG_DEBUG, "Rec message length = %d", rmrMessageBuffer.rcvMessage->len);
-                    for (size_t i = 0; i < (size_t)rmrMessageBuffer.rcvMessage->len; ++i) {
-                        snprintf(tmpRec, 3, "%02x", rmrMessageBuffer.rcvMessage->payload[i]);
-                        tmpRec += 2;
-                    }
-                    printBufferRec[rmrMessageBuffer.rcvMessage->len] = 0;
+                // if (rmrMessageBuffer.rcvMessage!=nullptr){
+                //     char printBufferRec[40960]{};
+                //     char *tmpRec = printBuffer;
+                //     for (size_t i = 0; i < (size_t)rmrMessageBuffer.rcvMessage->len; ++i) {
+                //         snprintf(tmpRec, 3, "%02x", rmrMessageBuffer.rcvMessage->payload[i]);
+                //         tmpRec += 2;
+                //     }
+                //     printBufferRec[rmrMessageBuffer.rcvMessage->len] = 0;
 
-                    // mdclog_write(MDCLOG_DEBUG, "Rec message length = %d, &data =  : %s", rmrMessageBuffer.rcvMessage->len,
-                    //         printBufferRec);
-                    mdclog_write(MDCLOG_DEBUG, "Rec message data =  : %s", printBufferRec);
-                }else{
-                    mdclog_write(MDCLOG_DEBUG, "Recv message is nullptr");
-                }
+                //     mdclog_write(MDCLOG_DEBUG, "Rec message length = %d, &data =  : %s", rmrMessageBuffer.rcvMessage->len,
+                //             printBufferRec);
+                // }
 
                 
                 
@@ -1255,14 +1210,9 @@ int receiveDataFromSctp(struct epoll_event *events,
                 read(message.peerInfo->fileDescriptor, rmrMessageBuffer.sendMessage->payload, RECEIVE_SCTP_BUFFER_SIZE);
 
         if (loglevel >= MDCLOG_DEBUG) {
-            posix_time::ptime now(posix_time::microsec_clock::local_time());
-            std::string now_str = to_simple_string(now);
-            mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %ld, time %s",
-                         message.peerInfo->fileDescriptor, message.message.asnLength, now_str.c_str());
+            mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %ld",
+                         message.peerInfo->fileDescriptor, message.message.asnLength);
         }
-        
-        
-    
 
         memcpy(message.message.enodbName, message.peerInfo->enodbName, sizeof(message.peerInfo->enodbName));
         message.statCollector->incRecvMessage(string(message.message.enodbName));
@@ -1302,7 +1252,7 @@ int receiveDataFromSctp(struct epoll_event *events,
             }
             printBuffer[message.message.asnLength] = 0;
             clock_gettime(CLOCK_MONOTONIC, &end);
-            mdclog_write(MDCLOG_DEBUG, "Before Encoding E2AP PDU for : %s, Read time is : %ld seconds, %ld nanoseconds, max sctp buffer size %d, ka msg size %d",
+            mdclog_write(MDCLOG_DEBUG, "Before Encoding E2AP PDU for : %s, Read time is : %ld seconds, %ld nanoseconds, max sctp buffer size %ld, ka msg size %ld",
                          message.peerInfo->enodbName, end.tv_sec - start.tv_sec, end.tv_nsec - start.tv_nsec, RECEIVE_SCTP_BUFFER_SIZE, KA_MESSAGE_SIZE);
             mdclog_write(MDCLOG_DEBUG, "PDU buffer length = %ld, data =  : %s", message.message.asnLength,
                          printBuffer);
@@ -2413,8 +2363,7 @@ int sendMessageSocket(const int dest_port) {
     // THE SOCKET IS CLOSED
     int option(1);
     setsockopt(sckfd, SOL_SOCKET, SO_REUSEADDR, (char*)&option, sizeof(option));
-    // int socket_rec_buff_size = RECEIVE_SCTP_BUFFER_SIZE;
-    // setsockopt(sckfd, SOL_SOCKET, SO_RCVBUF, &socket_rec_buff_size, sizeof(int));
+
     struct sockaddr_in dest_addr = {0};
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(dest_port);

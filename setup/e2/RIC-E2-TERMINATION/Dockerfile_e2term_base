@@ -24,14 +24,17 @@ FROM wineslab/o-ran-sc-bldr-ubuntu18-c-go:9-u18.04 as ubuntu
 
 WORKDIR /opt/e2/
 
-ARG BUILD_TYPE="Release"
+ARG BUILD_TYPE="Release" 
 
-RUN mkdir -p /opt/e2/RIC-E2-TERMINATION/ \
+RUN mkdir -p /opt/e2/RIC-E2-TERMINATION/ \ 
 #    && mkdir -p /opt/e2/RIC-E2-TERMINATION/TEST/T1 \
     && mkdir -p /opt/e2/RIC-E2-TERMINATION/TEST/T2 \
     && mkdir -p /opt/e2/RIC-E2-TERMINATION/3rdparty
 
-COPY . /opt/e2/RIC-E2-TERMINATION/
+COPY . /opt/e2/RIC-E2-TERMINATION/ 
+
+COPY ./sctpThread-base.cpp /opt/e2/RIC-E2-TERMINATION/sctpThread.cpp 
+COPY ./sctpThread-base.h /opt/e2/RIC-E2-TERMINATION/sctpThread.h
 
 RUN apt-get update && apt-get install -y libcurl4-gnutls-dev gawk libtbb-dev libtbb-doc libtbb2 libtbb2-dbg rapidjson-dev && rm -rf /var/lib/apt/lists/* \
     && mv /opt/e2/RIC-E2-TERMINATION/CMakeLists.txt /opt/e2/ && mv /opt/e2/RIC-E2-TERMINATION/Makefile /opt/e2/ && cat /opt/e2/RIC-E2-TERMINATION/config/config.conf \
@@ -44,15 +47,16 @@ RUN apt-get update && apt-get install -y libcurl4-gnutls-dev gawk libtbb-dev lib
     && wget --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/mdclog_0.0.4-1_amd64.deb/download.deb \
     && dpkg -i mdclog_0.0.4-1_amd64.deb \
     && wget --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/mdclog-dev_0.0.4-1_amd64.deb/download.deb \
-    && dpkg -i mdclog-dev_0.0.4-1_amd64.deb \
-    && cd /opt/e2/RIC-E2-TERMINATION/3rdparty && git clone https://github.com/oktal/pistache.git && cd pistache && git checkout 270bbefeb25a402153a55053f845e9c7674ab713 \
+    && dpkg -i mdclog-dev_0.0.4-1_amd64.deb
+
+RUN cd /opt/e2/RIC-E2-TERMINATION/3rdparty && git clone https://github.com/oktal/pistache.git && cd pistache && git checkout 270bbefeb25a402153a55053f845e9c7674ab713 \
     && git submodule update --init && mkdir build && cd build \
     && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DPISTACHE_BUILD_DOCS=false \
        -DPISTACHE_USE_SSL=false -DPISTACHE_BUILD_TESTS=false -DCMAKE_INSTALL_PREFIX=/usr/local ../ \
-    && make -j ${nproc} && make install && ldconfig \
+    && make -j ${nproc} && make install && ldconfig
 #    && git clone http://gerrit.o-ran-sc.org/r/com/log \
 #    && cd log && ./autogen.sh && ./configure && make && make install && ldconfig \
-    && cd /opt/e2/RIC-E2-TERMINATION/3rdparty && git clone https://github.com/jarro2783/cxxopts.git \
+RUN cd /opt/e2/RIC-E2-TERMINATION/3rdparty && git clone https://github.com/jarro2783/cxxopts.git \
     && cd /opt/e2/RIC-E2-TERMINATION/3rdparty && git clone https://github.com/Tencent/rapidjson.git \
     && cd /opt/e2/RIC-E2-TERMINATION/3rdparty && git clone https://github.com/zeux/pugixml.git \
     && cd /opt/e2/ && git clone https://github.com/bilke/cmake-modules.git \
@@ -151,4 +155,4 @@ ENV RMR_SEED_RT=dockerRouter.txt
 ENV E2TERM_POD_NAME=e2term
 RUN chmod +x /opt/e2/startup.sh
 EXPOSE 38000
-CMD ["sh", "-c", "./startup.sh"]
+# CMD ["sh", "-c", "./startup.sh"]

@@ -8,24 +8,31 @@ export SRC=`dirname $0`
 
 OURDIR=../setup
 
+SETUP_DIR=../setup
+MODEL_DIR=xapp-v2x
+IMAGE_NAME=e2term-base
+DOCKER_FILE=Dockerfile_e2term_base
+
 cd $OURDIR
 tagvers=`git log --pretty=format:"%h" -n 1`
 
-docker kill e2term
-docker rm e2term
-docker rmi e2term:bronze
-DOCKER_FILE=Dockerfile_e2term_from_base
+docker kill $IMAGE_NAME
+docker rm $IMAGE_NAME
+docker rmi $IMAGE_NAME:bronze
 
 # build e2term
-$SUDO docker image inspect e2term:bronze >/dev/null 2>&1
+$SUDO docker image inspect ${IMAGE_NAME}:bronze >/dev/null 2>&1
 if [ ! $? -eq 0 ]; then
     cd e2/RIC-E2-TERMINATION
-    $SUDO docker image inspect e2term:$tagvers >/dev/null 2>&1
+    cp ${DOCKER_FILE} ./${DOCKER_FILE}_${IMAGE_NAME}
+    $SUDO docker image inspect $IMAGE_NAME:$tagvers >/dev/null 2>&1
     if [ ! $? -eq 0 ]; then
-        $SUDO docker build -f $DOCKER_FILE -t e2term:$tagvers .
+        $SUDO docker build  \
+            -f ${DOCKER_FILE}_${IMAGE_NAME} -t ${IMAGE_NAME}:$tagvers .
     fi
-    $SUDO docker tag e2term:$tagvers e2term:bronze
-    $SUDO docker rmi e2term:$tagvers
+    rm ${DOCKER_FILE}_${IMAGE_NAME}
+    $SUDO docker tag ${IMAGE_NAME}:$tagvers ${IMAGE_NAME}:bronze
+    $SUDO docker rmi ${IMAGE_NAME}:$tagvers
     cd ../..
 fi
 
@@ -96,9 +103,9 @@ EOF
 fi
  E2TERM_CONFIG_BIND="--mount type=bind,source=$E2TERMCONFFILE,destination=/opt/e2/config/config.conf,ro"
 
-$SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term \
-        --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
-        $E2TERM_CONFIG_BIND \
-        e2term:bronze
+# $SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term \
+#         --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
+#         $E2TERM_CONFIG_BIND \
+#         e2term:bronze
 
 exit 0

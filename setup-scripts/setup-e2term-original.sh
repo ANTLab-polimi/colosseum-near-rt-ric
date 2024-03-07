@@ -14,7 +14,6 @@ tagvers=`git log --pretty=format:"%h" -n 1`
 docker kill e2term
 docker rm e2term
 docker rmi e2term:bronze
-DOCKER_FILE=Dockerfile_e2term_from_base
 
 # build e2term
 $SUDO docker image inspect e2term:bronze >/dev/null 2>&1
@@ -22,7 +21,7 @@ if [ ! $? -eq 0 ]; then
     cd e2/RIC-E2-TERMINATION
     $SUDO docker image inspect e2term:$tagvers >/dev/null 2>&1
     if [ ! $? -eq 0 ]; then
-        $SUDO docker build -f $DOCKER_FILE -t e2term:$tagvers .
+        $SUDO docker build -f Dockerfile -t e2term:$tagvers .
     fi
     $SUDO docker tag e2term:$tagvers e2term:bronze
     $SUDO docker rmi e2term:$tagvers

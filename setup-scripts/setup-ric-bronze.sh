@@ -39,21 +39,23 @@ if [ "$import" = true ] || [ $(docker image ls -q | wc -l) -eq "0" ]; then
     ./import-wines-images.sh
 fi
 
+./setup-e2term.sh
+
 cd $OURDIR
 tagvers=`git log --pretty=format:"%h" -n 1`
 
 # build e2term
-$SUDO docker image inspect e2term:bronze >/dev/null 2>&1
-if [ ! $? -eq 0 ]; then
-    cd e2/RIC-E2-TERMINATION
-    $SUDO docker image inspect e2term:$tagvers >/dev/null 2>&1
-    if [ ! $? -eq 0 ]; then
-        $SUDO docker build -f Dockerfile -t e2term:$tagvers .
-    fi
-    $SUDO docker tag e2term:$tagvers e2term:bronze
-    $SUDO docker rmi e2term:$tagvers
-    cd ../..
-fi
+# $SUDO docker image inspect e2term:bronze >/dev/null 2>&1
+# if [ ! $? -eq 0 ]; then
+#     cd e2/RIC-E2-TERMINATION
+#     $SUDO docker image inspect e2term:$tagvers >/dev/null 2>&1
+#     if [ ! $? -eq 0 ]; then
+#         $SUDO docker build -f Dockerfile -t e2term:$tagvers .
+#     fi
+#     $SUDO docker tag e2term:$tagvers e2term:bronze
+#     $SUDO docker rmi e2term:$tagvers
+#     cd ../..
+# fi
 
 # build e2mgr
 # inspect the base image
@@ -171,7 +173,8 @@ $SUDO docker run -d -it --network ric --ip $E2MGR_IP -e RIC_ID=7b0000-000000/18 
     --mount type=bind,source=$ROUTERFILE,destination=/opt/E2Manager/router.txt,ro \
     --name e2mgr e2mgr:bronze
 
-remove_container e2term 
+
+# remove_container e2term 
 E2TERMCONFFILE=`pwd`/e2term_config.conf
 if [ ! -e $E2TERMCONFFILE ]; then
 cat <<EOF >$E2TERMCONFFILE
@@ -203,9 +206,10 @@ if [ "$arena" = true ]; then
         $E2TERM_CONFIG_BIND \
         e2term:bronze
 else
-    $SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term -p ${RIC_IP}:${E2TERM_SCTP_PORT}:${E2TERM_SCTP_PORT}/sctp\
-        --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
-        $E2TERM_CONFIG_BIND e2term:bronze
+    echo ''
+    # $SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term -p ${RIC_IP}:${E2TERM_SCTP_PORT}:${E2TERM_SCTP_PORT}/sctp\
+    #     --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
+    #     $E2TERM_CONFIG_BIND e2term:bronze
     # $SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term -p ${RIC_IP}:${new_port}:${E2TERM_SCTP_PORT}/sctp\
     #     --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
     #     $E2TERM_CONFIG_BIND e2term:bronze
