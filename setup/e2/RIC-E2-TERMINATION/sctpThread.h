@@ -118,7 +118,8 @@ namespace expr = boost::log::expressions;
 
 // #define RECEIVE_SCTP_BUFFER_SIZE (128 * 1024)
 // #define RECEIVE_SCTP_BUFFER_SIZE (512 * 1024)
-#define RECEIVE_SCTP_BUFFER_SIZE (256 * 1024)
+// #define RECEIVE_SCTP_BUFFER_SIZE (256 * 1024)
+#define RECEIVE_SCTP_BUFFER_SIZE 262144
 // #define RECEIVE_SCTP_BUFFER_SIZE 1024000
 #define RECEIVE_XAPP_BUFFER_SIZE RECEIVE_SCTP_BUFFER_SIZE 
 
@@ -290,6 +291,13 @@ int sendSctpMsg(ConnectedCU_t *peerInfo,
  * @return
  */
 int receiveDataFromSctp(struct epoll_event *events,
+                        Sctp_Map_t *sctpMap,
+                        int &numOfMessages,
+                        RmrMessagesBuffer_t &rmrMessageBuffer,
+                        struct timespec &ts);
+
+
+int receiveDataFromSctpMulti(struct epoll_event *events,
                         Sctp_Map_t *sctpMap,
                         int &numOfMessages,
                         RmrMessagesBuffer_t &rmrMessageBuffer,

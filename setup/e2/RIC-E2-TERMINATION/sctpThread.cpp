@@ -730,25 +730,27 @@ void listener(sctp_params_t *params) {
                     mdclog_write(MDCLOG_DEBUG, "new message from SCTP, epoll flags are : %0x", events[i].events);
                 }
 
-                if ((rmrMessageBuffer.sendMessage!=nullptr) & (rmrMessageBuffer.sendMessage->len>0)){
-                    char printBuffer[102400]{};
-                    char *tmp = printBuffer;
-                    mdclog_write(MDCLOG_DEBUG, "Send message length = %d", rmrMessageBuffer.sendMessage->len);
-                    for (size_t i = 0; i < (size_t)rmrMessageBuffer.sendMessage->len; ++i) {
-                        snprintf(tmp, 3, "%02x", rmrMessageBuffer.sendMessage->payload[i]);
-                        tmp += 2;
-                    }
-                    printBuffer[rmrMessageBuffer.sendMessage->len] = 0;
-                    mdclog_write(MDCLOG_DEBUG, "Send message data =  : %s",
-                         printBuffer);
-                }else{
-                    mdclog_write(MDCLOG_DEBUG, "Send message is nullptr");
-                }
+                // if ((rmrMessageBuffer.sendMessage!=nullptr) & (rmrMessageBuffer.sendMessage->len>0)){
+                //     auto *peerInfo = (ConnectedCU_t *)events[i].data.ptr;
+                //     char printBuffer[102400]{};
+                //     char *tmp = printBuffer;
+                //     mdclog_write(MDCLOG_DEBUG, "Send message for %s length = %d", peerInfo->enodbName, rmrMessageBuffer.sendMessage->len);
+                //     for (size_t i = 0; i < (size_t)rmrMessageBuffer.sendMessage->len; ++i) {
+                //         snprintf(tmp, 3, "%02x", rmrMessageBuffer.sendMessage->payload[i]);
+                //         tmp += 2;
+                //     }
+                //     printBuffer[rmrMessageBuffer.sendMessage->len] = 0;
+                //     mdclog_write(MDCLOG_DEBUG, "Send message for %s data =  : %s",
+                //          peerInfo->enodbName, printBuffer);
+                // }else{
+                //     mdclog_write(MDCLOG_DEBUG, "Send message is nullptr");
+                // }
 
                 if ((rmrMessageBuffer.rcvMessage!=nullptr) && (rmrMessageBuffer.rcvMessage->len>0)){
                     char printBufferRec[102400]{};
                     char *tmpRec = printBufferRec;
-                    mdclog_write(MDCLOG_DEBUG, "Rec message length = %d", rmrMessageBuffer.rcvMessage->len);
+                    auto *peerInfo = (ConnectedCU_t *)events[i].data.ptr;
+                    mdclog_write(MDCLOG_DEBUG, "Rec message for  %s length = %d", peerInfo->enodbName, rmrMessageBuffer.rcvMessage->len);
                     for (size_t i = 0; i < (size_t)rmrMessageBuffer.rcvMessage->len; ++i) {
                         snprintf(tmpRec, 3, "%02x", rmrMessageBuffer.rcvMessage->payload[i]);
                         tmpRec += 2;
@@ -757,7 +759,7 @@ void listener(sctp_params_t *params) {
 
                     // mdclog_write(MDCLOG_DEBUG, "Rec message length = %d, &data =  : %s", rmrMessageBuffer.rcvMessage->len,
                     //         printBufferRec);
-                    mdclog_write(MDCLOG_DEBUG, "Rec message data =  : %s", printBufferRec);
+                    mdclog_write(MDCLOG_DEBUG, "Rec message for %s data =  : %s", peerInfo->enodbName, printBufferRec);
                 }else{
                     mdclog_write(MDCLOG_DEBUG, "Recv message is nullptr");
                 }
@@ -1257,12 +1259,11 @@ int receiveDataFromSctp(struct epoll_event *events,
         if (loglevel >= MDCLOG_DEBUG) {
             posix_time::ptime now(posix_time::microsec_clock::local_time());
             std::string now_str = to_simple_string(now);
-            mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %ld, time %s",
-                         message.peerInfo->fileDescriptor, message.message.asnLength, now_str.c_str());
+            // mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %ld",
+            //              message.peerInfo->fileDescriptor, message.message.asnLength);
+            mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %ld, time %s for %s",
+                        message.peerInfo->fileDescriptor, message.message.asnLength, now_str.c_str(), message.peerInfo->enodbName);
         }
-        
-        
-    
 
         memcpy(message.message.enodbName, message.peerInfo->enodbName, sizeof(message.peerInfo->enodbName));
         message.statCollector->incRecvMessage(string(message.message.enodbName));
@@ -1302,10 +1303,12 @@ int receiveDataFromSctp(struct epoll_event *events,
             }
             printBuffer[message.message.asnLength] = 0;
             clock_gettime(CLOCK_MONOTONIC, &end);
-            mdclog_write(MDCLOG_DEBUG, "Before Encoding E2AP PDU for : %s, Read time is : %ld seconds, %ld nanoseconds, max sctp buffer size %d, ka msg size %d",
-                         message.peerInfo->enodbName, end.tv_sec - start.tv_sec, end.tv_nsec - start.tv_nsec, RECEIVE_SCTP_BUFFER_SIZE, KA_MESSAGE_SIZE);
-            mdclog_write(MDCLOG_DEBUG, "PDU buffer length = %ld, data =  : %s", message.message.asnLength,
-                         printBuffer);
+            mdclog_write(MDCLOG_DEBUG, "Before Encoding E2AP PDU for : %s, Read time is : %ld seconds, %ld nanoseconds",
+                         message.peerInfo->enodbName, end.tv_sec - start.tv_sec, end.tv_nsec - start.tv_nsec);
+            // mdclog_write(MDCLOG_DEBUG, "PDU buffer length = %ld, data =  : %s", message.message.asnLength,
+            //              printBuffer);
+            mdclog_write(MDCLOG_DEBUG, "PDU buffer length = %ld for : %s, data =  : %s ", message.message.asnLength, message.peerInfo->enodbName,
+                        printBuffer);
             clock_gettime(CLOCK_MONOTONIC, &decodestart);
         }
 
@@ -1358,6 +1361,221 @@ int receiveDataFromSctp(struct epoll_event *events,
             ASN_STRUCT_RESET(asn_DEF_E2AP_PDU, pdu);
             //ASN_STRUCT_FREE(asn_DEF_E2AP_PDU, pdu);
             //pdu = nullptr;
+        }
+    }
+
+    if (done) {
+        if (loglevel >= MDCLOG_INFO) {
+            mdclog_write(MDCLOG_INFO, "Closed connection - descriptor = %d", message.peerInfo->fileDescriptor);
+        }
+        message.message.asnLength = rmrMessageBuffer.sendMessage->len =
+                snprintf((char *)rmrMessageBuffer.sendMessage->payload,
+                         256,
+                         "%s|CU disconnected unexpectedly",
+                         message.peerInfo->enodbName);
+        message.message.asndata = rmrMessageBuffer.sendMessage->payload;
+
+        if (sendRequestToXapp(message,
+                              RIC_SCTP_CONNECTION_FAILURE,
+                              rmrMessageBuffer) != 0) {
+            mdclog_write(MDCLOG_ERR, "SCTP_CONNECTION_FAIL message failed to send to xAPP");
+        }
+
+        /* Closing descriptor make epoll remove it from the set of descriptors which are monitored. */
+        close(message.peerInfo->fileDescriptor);
+        cleanHashEntry((ConnectedCU_t *) events->data.ptr, sctpMap);
+    }
+    if (loglevel >= MDCLOG_DEBUG) {
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        mdclog_write(MDCLOG_DEBUG, "from receive SCTP to send RMR time is %ld seconds and %ld nanoseconds",
+                     end.tv_sec - start.tv_sec, end.tv_nsec - start.tv_nsec);
+
+    }
+    return 0;
+}
+int receiveDataFromSctpMulti(struct epoll_event *events,
+                        Sctp_Map_t *sctpMap,
+                        int &numOfMessages,
+                        RmrMessagesBuffer_t &rmrMessageBuffer,
+                        struct timespec &ts) {
+    /* We have data on the fd waiting to be read. Read and display it.
+ * We must read whatever data is available completely, as we are running
+ *  in edge-triggered mode and won't get a notification again for the same data. */
+    ReportingMessages_t message {};
+    auto done = 0;
+    auto loglevel = mdclog_level_get();
+
+    // get the identity of the interface
+    message.peerInfo = (ConnectedCU_t *)events->data.ptr;
+
+    message.statCollector = StatCollector::GetInstance();
+    struct timespec start{0, 0};
+    struct timespec decodestart{0, 0};
+    struct timespec end{0, 0};
+
+    E2AP_PDU_t *pdu = nullptr;
+
+    unsigned char multi_pdu_buf[KA_MESSAGE_SIZE] = {0};
+
+
+    while (true) {
+        if (loglevel >= MDCLOG_DEBUG) {
+            mdclog_write(MDCLOG_DEBUG, "Start Read from SCTP %d fd", message.peerInfo->fileDescriptor);
+            clock_gettime(CLOCK_MONOTONIC, &start);
+            // mdclog_write(MDCLOG_DEBUG, "SCTP buffer max size %d ", KA_MESSAGE_SIZE);
+        }
+
+        // read the buffer directly to rmr payload
+        // message.message.asndata = rmrMessageBuffer.sendMessage->payload;
+        // message.message.asnLength = rmrMessageBuffer.sendMessage->len =
+        //         read(message.peerInfo->fileDescriptor, rmrMessageBuffer.sendMessage->payload, RECEIVE_SCTP_BUFFER_SIZE);
+        // int rcv_size = 0;
+        
+                
+        int rcv_size = read(message.peerInfo->fileDescriptor, multi_pdu_buf, KA_MESSAGE_SIZE);
+
+        // we set this value in case there is an exit form the loop so it does not send data to the xapp
+        message.message.asndata = rmrMessageBuffer.sendMessage->payload = &multi_pdu_buf[0];
+        message.message.asnLength = rmrMessageBuffer.sendMessage->len = rcv_size;
+
+        if (loglevel >= MDCLOG_DEBUG) {
+            posix_time::ptime now(posix_time::microsec_clock::local_time());
+            std::string now_str = to_simple_string(now);
+            // mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %ld, time %s for ",
+            //             message.peerInfo->fileDescriptor, message.message.asnLength, now_str.c_str(), message.peerInfo->enodbName);
+            mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %d, time %s for %s",
+                        message.peerInfo->fileDescriptor, rcv_size, now_str.c_str(), message.peerInfo->enodbName);
+        }
+
+        memcpy(message.message.enodbName, message.peerInfo->enodbName, sizeof(message.peerInfo->enodbName));
+        message.statCollector->incRecvMessage(string(message.message.enodbName));
+        message.message.direction = 'U';
+        message.message.time.tv_nsec = ts.tv_nsec;
+        message.message.time.tv_sec = ts.tv_sec;
+
+        if(rcv_size<0){
+            memset(multi_pdu_buf, 0, KA_MESSAGE_SIZE);
+        // if (message.message.asnLength < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            /* If errno == EAGAIN, that means we have read all
+            data. So goReportingMessages_t back to the main loop. */
+            if (errno != EAGAIN) {
+                mdclog_write(MDCLOG_ERR, "Read error, %s ", strerror(errno));
+                done = 1;
+            } else if (loglevel >= MDCLOG_DEBUG) {
+                mdclog_write(MDCLOG_DEBUG, "EAGAIN - descriptor = %d", message.peerInfo->fileDescriptor);
+            }
+            break;
+        } else if (rcv_size == 0) {
+            memset(multi_pdu_buf, 0, KA_MESSAGE_SIZE);
+        // } else if (message.message.asnLength == 0) {
+            /* End of file. The remote has closed the connection. */
+            if (loglevel >= MDCLOG_INFO) {
+                mdclog_write(MDCLOG_INFO, "END of File Closed connection - descriptor = %d",
+                            message.peerInfo->fileDescriptor);
+            }
+            done = 1;
+            break;
+        }
+
+        if (loglevel >= MDCLOG_DEBUG) {
+            char printBuffer[40960]{};
+            char *tmp = printBuffer;
+            // for (size_t i = 0; i < (size_t)message.message.asnLength; ++i) {
+            //     snprintf(tmp, 3, "%02x", message.message.asndata[i]);
+            //     tmp += 2;
+            // }
+            // printBuffer[message.message.asnLength] = 0;
+            for (int i = 0; i < rcv_size; ++i) {
+                snprintf(tmp, 3, "%02x", multi_pdu_buf[i]);
+                tmp += 2;
+            }
+            printBuffer[rcv_size] = 0;
+            
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            mdclog_write(MDCLOG_DEBUG, "Before Encoding E2AP PDU for : %s, Read time is : %ld seconds, %ld nanoseconds, max sctp buffer size %d, ka msg size %d",
+                        message.peerInfo->enodbName, end.tv_sec - start.tv_sec, end.tv_nsec - start.tv_nsec, RECEIVE_SCTP_BUFFER_SIZE, KA_MESSAGE_SIZE);
+            // mdclog_write(MDCLOG_DEBUG, "PDU buffer length = %ld for : %s, data =  : %s ", message.message.asnLength, message.peerInfo->enodbName,
+            //             printBuffer);
+            mdclog_write(MDCLOG_DEBUG, "PDU buffer length = %d for : %s, data =  : %s ", rcv_size, message.peerInfo->enodbName,
+                        printBuffer);
+            clock_gettime(CLOCK_MONOTONIC, &decodestart);
+        }
+
+        // read until we received all the pdus
+        // int rcv_size = read(message.peerInfo->fileDescriptor, multi_pdu_buf, KA_MESSAGE_SIZE, 0);
+        int remaining_bytes = rcv_size;
+        int consumed_bytes = 0;
+        bool finished_with_break = false;
+
+        while (remaining_bytes>0){
+
+            // auto rval = asn_decode(nullptr, ATS_ALIGNED_BASIC_PER, &asn_DEF_E2AP_PDU, (void **) &pdu,
+            //                 message.message.asndata, message.message.asnLength);
+            // we instead decode the multiple buffer coming in an iterative way
+            auto rval = asn_decode(nullptr, ATS_ALIGNED_BASIC_PER, &asn_DEF_E2AP_PDU, (void **) &pdu,
+                            (void*)&multi_pdu_buf[consumed_bytes], remaining_bytes);
+            if (rval.code != RC_OK) {
+                mdclog_write(MDCLOG_ERR, "Error %d Decoding (unpack) E2AP PDU from RAN : %s", rval.code,
+                            message.peerInfo->enodbName);
+                //todo may need reset to pdu
+                finished_with_break = true;
+                break;
+            }
+            // should copy data to rmrMessageBuffer so that it can be sent and further elaborate from the xapp
+            rmrMessageBuffer.sendMessage->len = message.message.asnLength = rval.consumed;
+            rmrMessageBuffer.sendMessage->payload = message.message.asndata = &multi_pdu_buf[consumed_bytes];
+            consumed_bytes+=(int)rval.consumed;
+            remaining_bytes = rcv_size - consumed_bytes;
+            mdclog_write(MDCLOG_DEBUG, "PDU size = %d & consumed bytes %d & remaining %d for : %s ", rcv_size, consumed_bytes, remaining_bytes, message.peerInfo->enodbName);
+
+            if (loglevel >= MDCLOG_DEBUG) {
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                mdclog_write(MDCLOG_DEBUG, "After Encoding E2AP PDU for : %s, Read time is : %ld seconds, %ld nanoseconds",
+                            message.peerInfo->enodbName, end.tv_sec - decodestart.tv_sec, end.tv_nsec - decodestart.tv_nsec);
+                char *printBuffer;
+                size_t size;
+                FILE *stream = open_memstream(&printBuffer, &size);
+                asn_fprint(stream, &asn_DEF_E2AP_PDU, pdu);
+                mdclog_write(MDCLOG_DEBUG, "Encoding E2AP PDU past : %s", printBuffer);
+                clock_gettime(CLOCK_MONOTONIC, &decodestart);
+            }
+            // send data to xapp
+            switch (pdu->present) {
+                case E2AP_PDU_PR_initiatingMessage: {//initiating message
+                    asnInitiatingRequest(pdu, sctpMap,message, rmrMessageBuffer);
+                    break;
+                }
+                case E2AP_PDU_PR_successfulOutcome: { //successful outcome
+                    asnSuccsesfulMsg(pdu, sctpMap, message,  rmrMessageBuffer);
+                    break;
+                }
+                case E2AP_PDU_PR_unsuccessfulOutcome: { //Unsuccessful Outcome
+                    asnUnSuccsesfulMsg(pdu, sctpMap, message, rmrMessageBuffer);
+                    break;
+                }
+                default:
+                    mdclog_write(MDCLOG_ERR, "Unknown index %d in E2AP PDU", pdu->present);
+                    break;
+            }
+            if (loglevel >= MDCLOG_DEBUG) {
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                mdclog_write(MDCLOG_DEBUG,
+                            "After processing message and sent to rmr for : %s, Read time is : %ld seconds, %ld nanoseconds",
+                            message.peerInfo->enodbName, end.tv_sec - decodestart.tv_sec, end.tv_nsec - decodestart.tv_nsec);
+            }
+            numOfMessages++;
+            if (pdu != nullptr) {
+                ASN_STRUCT_RESET(asn_DEF_E2AP_PDU, pdu);
+                //ASN_STRUCT_FREE(asn_DEF_E2AP_PDU, pdu);
+                //pdu = nullptr;
+            }
+        }
+        memset(multi_pdu_buf, 0, KA_MESSAGE_SIZE);
+        if (finished_with_break){
+            break;
         }
     }
 
