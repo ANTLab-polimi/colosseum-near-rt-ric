@@ -39,6 +39,8 @@ if [ "$import" = true ] || [ $(docker image ls -q | wc -l) -eq "0" ]; then
     ./import-wines-images.sh
 fi
 
+./setup-e2term-base.sh
+
 ./setup-e2term.sh
 
 cd $OURDIR
