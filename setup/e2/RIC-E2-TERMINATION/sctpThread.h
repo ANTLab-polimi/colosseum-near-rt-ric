@@ -305,11 +305,11 @@ int receiveDataFromSctp(struct epoll_event *events,
                         struct timespec &ts);
 
 
-int receiveDataFromSctpMulti(struct epoll_event *events,
-                        Sctp_Map_t *sctpMap,
-                        int &numOfMessages,
-                        RmrMessagesBuffer_t &rmrMessageBuffer,
-                        struct timespec &ts);
+// int receiveDataFromSctpMulti(struct epoll_event *events,
+//                         Sctp_Map_t *sctpMap,
+//                         int &numOfMessages,
+//                         RmrMessagesBuffer_t &rmrMessageBuffer,
+//                         struct timespec &ts);
 
 /**
  *
@@ -427,7 +427,7 @@ static inline uint64_t rdtscp(uint32_t &aux) {
 
 // modified
 
-int saveSctpMsg(ConnectedCU_t *peerInfo, ReportingMessages_t &message, Sctp_Map_t *m);
+// int saveSctpMsg(ConnectedCU_t *peerInfo, ReportingMessages_t &message, Sctp_Map_t *m);
 
 // end modification
 
