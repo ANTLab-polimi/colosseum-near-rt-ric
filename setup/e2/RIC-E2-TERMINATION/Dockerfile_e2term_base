@@ -98,8 +98,6 @@ RUN if [$BUILD_TYPE == "Debug"] ; then make e2_coverage ; fi
 
 FROM ubuntu:18.04
 
-
-
 RUN apt-get update && apt-get install -y net-tools iputils-ping curl tcpdump libsctp-dev vim build-essential && mkdir -p /opt/e2/config
 RUN apt-get install -y libboost-all-dev libtbb-dev rapidjson-dev
 
