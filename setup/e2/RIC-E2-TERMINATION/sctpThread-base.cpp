@@ -296,6 +296,18 @@ int buildConfiguration(sctp_params_t &sctpParams) {
             //keywords::format = "[%TimeStamp%]: %Message%" // use each tmpStr with time stamp
     );
 
+    // auto fmtTimeStamp = expr::
+    //     format_date_time<posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f");
+    // auto fmtThreadId = expr::
+    //     attr<logging::attributes::current_thread_id::value_type>("ThreadID");
+    // auto fmtSeverity =expr::
+    //     attr<logging::v2s_mt_posix::trivial::severity_level>("Severity");
+
+    // boost::log::formatter logFmt =
+    //     expr::format("[%1%] [%2%] %3%")
+    //     % fmtTimeStamp % fmtSeverity
+    //     % expr::smessage;
+
     // Setup a destination folder for collecting rotated (closed) files --since the same volumn can use rename()
     boostLogger->locked_backend()->set_file_collector(sinks::file::make_collector(
             keywords::target = sctpParams.volume

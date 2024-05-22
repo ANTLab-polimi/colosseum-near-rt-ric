@@ -75,6 +75,18 @@ include_directories(RIC-E2-TERMINATION/TEST/e2smTest)
 include_directories(RIC-E2-TERMINATION/TEST/T1)
 include_directories(RIC-E2-TERMINATION/TEST/T2)
 
+# modified
+find_package(Boost REQUIRED COMPONENTS system thread filesystem)
+if(Boost_FOUND)
+message(STATUS "Boost livraries: ${Boost_LIBRARIES}")
+include_directories(${Boost_INCLUDE_DIRS})
+#     target_link_libraries(sctpClient Boost::system Boost::filesystem Boost::thread)
+# target_link_libraries(sctpClient ${Boost_LIBRARIES})
+# target_link_libraries(e2 ${Boost_LIBRARIES})
+endif()
+# modified
+
+
 
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
@@ -113,11 +125,20 @@ add_executable(e2 RIC-E2-TERMINATION/sctpThread.cpp
         RIC-E2-TERMINATION/3rdparty/pugixml/src/pugixml.cpp
         RIC-E2-TERMINATION/3rdparty/pugixml/src/pugixml.hpp
         RIC-E2-TERMINATION/BuildXml.h)
+
+# modified
+if(Boost_FOUND)
+message(STATUS "Boost livraries: ${Boost_LIBRARIES}")
+target_link_libraries(e2 ${Boost_LIBRARIES} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_REGEX_LIBRARY})
+endif()
+# end modified
 target_link_libraries(e2 libasn1ce2smcodec.a)
 target_link_libraries(e2 librmr_si.a)
 target_link_libraries(e2 libicui18n.a)
 target_link_libraries(e2 libicuuc.a)
 target_link_libraries(e2 libicudata.a)
+
+
 
 #target_link_libraries(e2 libnng.a)
 
@@ -129,6 +150,10 @@ add_executable(b64Test
         RIC-E2-TERMINATION/base64.cpp
         RIC-E2-TERMINATION/base64.h
         RIC-E2-TERMINATION/TEST/base64/testBase64.cpp)
+if(Boost_FOUND)
+message(STATUS "Boost livraries: ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_REGEX_LIBRARY}")
+target_link_libraries(b64Test ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_REGEX_LIBRARY})
+endif()
 
 
 add_executable(sctpClient
@@ -144,9 +169,16 @@ add_executable(sctpClient
         #RIC-E2-TERMINATION/TEST/T1/Test1.cpp
         #RIC-E2-TERMINATION/TEST/T1/
         )
+# modified
+if(Boost_FOUND)
+message(STATUS "Boost livraries: ${Boost_LIBRARIES}")
+target_link_libraries(sctpClient ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_REGEX_LIBRARY})
+endif()
+# end modified
 target_link_libraries(sctpClient libpistache.a)
 target_link_libraries(sctpClient librmr_si.a)
 #target_link_libraries(sctpClient libnng.a)
+
 
 add_executable(setUpMessages
         RIC-E2-TERMINATION/TEST/testAsn/setUpMessages/SetUpMessages.cpp

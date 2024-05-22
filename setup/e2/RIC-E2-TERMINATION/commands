@@ -1,0 +1,12 @@
+rmr_send_msg
+
+rmr_rcv_msg (receiveXappMessages)
+
+
+// modified
+managed_shared_memory segment(open_only, "E2termBuffer");
+//Find the array
+RanSendMessageBufferVector* ranMessageBufferVect = segment.find<RanSendMessageBufferVector> ("ranSendData");
+ranMessageBufferVect->push_back(FormatedMessageBuffer_t{message.message, fd});
+
+// end modification

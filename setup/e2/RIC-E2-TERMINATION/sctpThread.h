@@ -66,8 +66,7 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/filesystem.hpp>
-// #include <boost/log/expressions/formatters/date_time.hpp>
-#include <boost/log/support/date_time.hpp>
+#include <boost/log/expressions/formatters/date_time.hpp>
 #include <boost/log/expressions/formatter.hpp>
 #include <boost/log/expressions/formatters/named_scope.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
@@ -76,6 +75,7 @@
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/log/support/date_time.hpp>
 
 #include <mdclog/mdclog.h>
 
@@ -196,6 +196,14 @@ typedef struct ReportingMessages {
     char buffer[RECEIVE_SCTP_BUFFER_SIZE * 8] {};
     StatCollector *statCollector = nullptr;
 } ReportingMessages_t;
+
+
+typedef struct formatedMessageBuffer {
+    FormatedMessage_t message {};
+    int fileDescriptor;
+} FormatedMessageBuffer_t;
+
+
 
 cxxopts::ParseResult parse(int argc, const char *argv[], sctp_params_t &pSctpParams);
 
@@ -416,6 +424,14 @@ static inline uint64_t rdtscp(uint32_t &aux) {
     asm volatile ("rdtscp\n" : "=a" (rax), "=d" (rdx), "=c" (aux) : :);
     return (rdx << (unsigned)32) + rax;
 }
+
+// modified
+
+int saveSctpMsg(ConnectedCU_t *peerInfo, ReportingMessages_t &message, Sctp_Map_t *m);
+
+// end modification
+
+
 #ifndef RIC_SCTP_CONNECTION_FAILURE
 #define RIC_SCTP_CONNECTION_FAILURE  10080
 #endif

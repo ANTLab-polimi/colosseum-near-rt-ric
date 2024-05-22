@@ -57,11 +57,39 @@
 #include <string>
 #include <chrono>
 
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/containers/vector.hpp>
+#include <boost/interprocess/allocators/allocator.hpp>
+
+#include <cstring>
+#include <cstdlib>
+
 using namespace std;
 //using namespace std::placeholders;
 using namespace boost::filesystem;
+using namespace boost::interprocess;
 
 using namespace rapidjson;
+
+//Define an STL compatible allocator of ints that allocates from the managed_shared_memory.
+//This allocator will allow placing containers in the segment
+typedef allocator<int, managed_shared_memory::segment_manager>  RmrRecvMessageBufferAllocator;
+
+//Alias a vector that uses the previous STL-like allocator so that allocates
+//its values from the segment
+typedef vector<RmrMessagesBuffer_t, RmrRecvMessageBufferAllocator> RmrRecvMessageBufferVector;
+
+
+typedef allocator<int, managed_shared_memory::segment_manager>  RmrSendMessageBufferAllocator;
+typedef vector<rmr_mbuf_t, RmrSendMessageBufferAllocator> RmrSendMessageBufferVector;
+
+
+typedef allocator<int, managed_shared_memory::segment_manager>  RanRecvMessageBufferAllocator;
+typedef vector<FormatedMessageBuffer_t, RanRecvMessageBufferAllocator> RanRecvMessageBufferVector;
+
+typedef allocator<int, managed_shared_memory::segment_manager>  RanSendMessageBufferAllocator;
+typedef vector<FormatedMessageBuffer_t, RanSendMessageBufferAllocator> RanSendMessageBufferVector;
 
 //#ifdef __cplusplus
 //extern "C"
@@ -307,12 +335,11 @@ int buildConfiguration(sctp_params_t &sctpParams) {
             // )
             // keywords::format = "[%TimeStamp%]: %Message%" // use each tmpStr with time stamp
     );
-    auto fmtTimeStamp = expr::
-        format_date_time<posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f");
+    
+    auto fmtTimeStamp = expr::format_date_time<posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f");
     // auto fmtThreadId = expr::
     //     attr<logging::attributes::current_thread_id::value_type>("ThreadID");
-    auto fmtSeverity =expr::
-        attr<logging::trivial::severity_level>("Severity");
+    auto fmtSeverity =expr::attr<logging::trivial::severity_level>("Severity");
     // auto fmtScope = expr::format_named_scope("Scope",
     //     keywords::format = "%n(%f:%l)",
     //     keywords::iteration = expr::reverse,
@@ -321,14 +348,17 @@ int buildConfiguration(sctp_params_t &sctpParams) {
     //     expr::format("[%1%] (%2%) [%3%] [%4%] %5%")
     //     % fmtTimeStamp % fmtThreadId % fmtSeverity % fmtScope
     //     % expr::smessage;
+
     boost::log::formatter logFmt =
         expr::format("[%1%] [%2%] %3%")
         % fmtTimeStamp % fmtSeverity
         % expr::smessage;
 
     boostLogger->set_formatter(logFmt);
+
+    // boostLogger->set_formatter(fmt::stream <fmt::date_time<posix_time::ptime>>("TimeStamp", 
+    //                             "%Y-%m-%d %H:%M:%S.%f");)
     
-//     boostLogger->set_formatter
 // (
 //     fmt::stream <<
 //       fmt::date_time<boost::posix_time::ptime>
@@ -365,6 +395,30 @@ int main(const int argc, const char **argv) {
 //    uint64_t st = 0;
 //    uint32_t aux1 = 0;
 //   st = rdtscp(aux1);
+
+    // modified
+    // here we create all the shared data we need
+    // remove the shared memory if exists
+    // boost::interprocess::shared_memory_object::remove("E2termBuffer");
+    // boost::interprocess::managed_shared_memory sm(create_only, "E2termBuffer", sharedMemoryBufferSize);
+    // // construct the shared buffer data 
+    // boost::interprocess::shared_memory_object::remove("SharedBufferData"); 
+    // auto sharedBufferData = sm.construct<uint8_t>("SharedBufferData")[sharedMemoryBufferSize-1000]('\0');
+    // boost::interprocess::shared_memory_object::remove("SharedBufferSize"); 
+    // int *sharedBufferSize = sm.construct<int>("SharedBufferSize")(0);
+
+    // RmrRecvMessageBufferAllocator alloc_inst_rmr_recv (sm.get_segment_manager());
+    // RmrRecvMessageBufferVector* xappRcvData = sm.construct<RmrRecvMessageBufferVector>("xappRcvData")(alloc_inst_rmr_recv);
+
+    // RmrSendMessageBufferAllocator alloc_inst_rmr_send (sm.get_segment_manager());
+    // RmrSendMessageBufferVector* xappSendData = sm.construct<RmrSendMessageBufferVector>("xappSendData")(alloc_inst_rmr_send);
+
+    // RanRecvMessageBufferAllocator alloc_inst_ran_recv (sm.get_segment_manager());
+    // RanRecvMessageBufferVector* ranRcvData = sm.construct<RanRecvMessageBufferVector>("ranRecvData")(alloc_inst_ran_recv);
+
+    // RanSendMessageBufferAllocator alloc_inst_ran_send (sm.get_segment_manager());
+    // RanSendMessageBufferVector* ranSendData = sm.construct<RanSendMessageBufferVector>("ranSendData")(alloc_inst_ran_send);
+    // end modification
 
     unsigned num_cpus = std::thread::hardware_concurrency();
     init_log();
@@ -425,6 +479,8 @@ int main(const int argc, const char **argv) {
     std::vector<std::thread> threads(num_cpus);
 //    std::vector<std::thread> threads;
 
+    sctpParams.logLevel = MDCLOG_INFO;
+
     num_cpus = 1;
     for (unsigned int i = 0; i < num_cpus; i++) {
         threads[i] = std::thread(listener, &sctpParams);
@@ -479,6 +535,11 @@ void handleTermInit(sctp_params_t &sctpParams) {
 
 void sendTermInit(sctp_params_t &sctpParams) {
     rmr_mbuf_t *msg = rmr_alloc_msg(sctpParams.rmrCtx, sctpParams.ka_message_length);
+    // modified
+    // managed_shared_memory segment(open_only, "E2termBuffer");
+    // RmrSendMessageBufferVector* xappMessageBufferVect = segment.find<RmrSendMessageBufferVector> ("xappSendData");
+    // xappMessageBufferVect->push_back(rmrMessageBuffer.sendMessage);
+    // end modification
     auto count = 0;
     while (true) {
         msg->mtype = E2_TERM_INIT;
@@ -574,6 +635,7 @@ int buildInotify(sctp_params_t &sctpParams) {
  * @return
  */
 void listener(sctp_params_t *params) {
+
     int num_of_SCTP_messages = 0;
     auto totalTime = 0.0;
     mdclog_mdc_clean();
@@ -626,6 +688,8 @@ void listener(sctp_params_t *params) {
 //    }
 
     message.statCollector = StatCollector::GetInstance();
+
+    unsigned char multi_pdu_unread_buf[KA_MESSAGE_SIZE] = {0};
 
     while (true) {
         if (mdclog_level_get() >= MDCLOG_DEBUG) {
@@ -730,27 +794,31 @@ void listener(sctp_params_t *params) {
                     mdclog_write(MDCLOG_DEBUG, "new message from SCTP, epoll flags are : %0x", events[i].events);
                 }
 
-                // if ((rmrMessageBuffer.sendMessage!=nullptr) & (rmrMessageBuffer.sendMessage->len>0)){
-                //     auto *peerInfo = (ConnectedCU_t *)events[i].data.ptr;
-                //     char printBuffer[102400]{};
-                //     char *tmp = printBuffer;
-                //     mdclog_write(MDCLOG_DEBUG, "Send message for %s length = %d", peerInfo->enodbName, rmrMessageBuffer.sendMessage->len);
-                //     for (size_t i = 0; i < (size_t)rmrMessageBuffer.sendMessage->len; ++i) {
-                //         snprintf(tmp, 3, "%02x", rmrMessageBuffer.sendMessage->payload[i]);
-                //         tmp += 2;
-                //     }
-                //     printBuffer[rmrMessageBuffer.sendMessage->len] = 0;
-                //     mdclog_write(MDCLOG_DEBUG, "Send message for %s data =  : %s",
-                //          peerInfo->enodbName, printBuffer);
-                // }else{
-                //     mdclog_write(MDCLOG_DEBUG, "Send message is nullptr");
-                // }
+                if ((rmrMessageBuffer.sendMessage!=nullptr) & (rmrMessageBuffer.sendMessage->len>0)){
+                    auto *peerInfo = (ConnectedCU_t *)events[i].data.ptr;
+                    char printBuffer[102400]{};
+                    char *tmp = printBuffer;
+                    posix_time::ptime now(posix_time::microsec_clock::local_time());
+                    std::string now_str = to_simple_string(now);
+                    mdclog_write(MDCLOG_DEBUG, "Send message for %s length = %d, time %s", peerInfo->enodbName, rmrMessageBuffer.sendMessage->len, now_str.c_str());
+                    for (size_t i = 0; i < (size_t)rmrMessageBuffer.sendMessage->len; ++i) {
+                        snprintf(tmp, 3, "%02x", rmrMessageBuffer.sendMessage->payload[i]);
+                        tmp += 2;
+                    }
+                    printBuffer[rmrMessageBuffer.sendMessage->len] = 0;
+                    mdclog_write(MDCLOG_DEBUG, "Send message for %s data =  : %s",
+                         peerInfo->enodbName, printBuffer);
+                }else{
+                    mdclog_write(MDCLOG_DEBUG, "Send message is nullptr");
+                }
 
                 if ((rmrMessageBuffer.rcvMessage!=nullptr) && (rmrMessageBuffer.rcvMessage->len>0)){
                     char printBufferRec[102400]{};
                     char *tmpRec = printBufferRec;
                     auto *peerInfo = (ConnectedCU_t *)events[i].data.ptr;
-                    mdclog_write(MDCLOG_DEBUG, "Rec message for  %s length = %d", peerInfo->enodbName, rmrMessageBuffer.rcvMessage->len);
+                    posix_time::ptime now(posix_time::microsec_clock::local_time());
+                    std::string now_str = to_simple_string(now);
+                    mdclog_write(MDCLOG_INFO, "Recv message for  %s length = %d, time %s", peerInfo->enodbName, rmrMessageBuffer.rcvMessage->len, now_str.c_str());
                     for (size_t i = 0; i < (size_t)rmrMessageBuffer.rcvMessage->len; ++i) {
                         snprintf(tmpRec, 3, "%02x", rmrMessageBuffer.rcvMessage->payload[i]);
                         tmpRec += 2;
@@ -764,8 +832,12 @@ void listener(sctp_params_t *params) {
                     mdclog_write(MDCLOG_DEBUG, "Recv message is nullptr");
                 }
 
-                
-                
+                // receiveDataFromSctpMultiSave(&events[i],
+                //                     params->sctpMap,
+                //                     num_of_SCTP_messages,
+                //                     rmrMessageBuffer,
+                //                     message.message.time);
+
                 receiveDataFromSctp(&events[i],
                                     params->sctpMap,
                                     num_of_SCTP_messages,
@@ -786,6 +858,208 @@ void listener(sctp_params_t *params) {
             }
         }
     }
+}
+
+void sctpMessageProcessing(sctp_params_t *params) {
+
+    // remove the shared memory if exists
+    boost::interprocess::shared_memory_object::remove("E2termBuffer");
+    boost::interprocess::managed_shared_memory sm(create_only, "E2termBuffer", sharedMemoryBufferSize);
+    // construct the shared buffer data 
+    boost::interprocess::shared_memory_object::remove("SharedBufferData"); 
+    auto sharedBufferData = sm.construct<uint8_t>("SharedBufferData")[sharedMemoryBufferSize-1000]('\0');
+    boost::interprocess::shared_memory_object::remove("SharedBufferSize"); 
+    int *sharedBufferSize = sm.construct<int>("SharedBufferSize")(0);
+
+    ReportingMessages_t message {};
+    auto done = 0;
+    auto loglevel = mdclog_level_get();
+
+    unsigned char multi_pdu_buf[KA_MESSAGE_SIZE] = {0};
+
+    size_t sharedMemoryBufferSize = 5000000;
+
+    
+
+    // in this loop we check if new data has been received
+    // if yes, we process the data in the seconds process
+    while(true){
+
+        // we set this value in case there is an exit form the loop so it does not send data to the xapp
+        message.message.asndata = rmrMessageBuffer.sendMessage->payload = &multi_pdu_buf[0];
+        message.message.asnLength = rmrMessageBuffer.sendMessage->len = rcv_size;
+        
+        if (loglevel >= MDCLOG_DEBUG) {
+            posix_time::ptime now(posix_time::microsec_clock::local_time());
+            std::string now_str = to_simple_string(now);
+            // mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %ld, time %s for ",
+            //             message.peerInfo->fileDescriptor, message.message.asnLength, now_str.c_str(), message.peerInfo->enodbName);
+            mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %d, time %s for %s",
+                        message.peerInfo->fileDescriptor, rcv_size, now_str.c_str(), message.peerInfo->enodbName);
+        }
+        memcpy(message.message.enodbName, message.peerInfo->enodbName, sizeof(message.peerInfo->enodbName));
+        message.statCollector->incRecvMessage(string(message.message.enodbName));
+        message.message.direction = 'U';
+        message.message.time.tv_nsec = ts.tv_nsec;
+        message.message.time.tv_sec = ts.tv_sec;
+
+        if(rcv_size<0){
+            memset(multi_pdu_buf, 0, KA_MESSAGE_SIZE);
+        // if (message.message.asnLength < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            /* If errno == EAGAIN, that means we have read all
+            data. So goReportingMessages_t back to the main loop. */
+            if (errno != EAGAIN) {
+                mdclog_write(MDCLOG_ERR, "Read error, %s ", strerror(errno));
+                done = 1;
+            } else if (loglevel >= MDCLOG_DEBUG) {
+                mdclog_write(MDCLOG_DEBUG, "EAGAIN - descriptor = %d", message.peerInfo->fileDescriptor);
+            }
+            break;
+        } else if (rcv_size == 0) {
+            memset(multi_pdu_buf, 0, KA_MESSAGE_SIZE);
+        // } else if (message.message.asnLength == 0) {
+            /* End of file. The remote has closed the connection. */
+            if (loglevel >= MDCLOG_INFO) {
+                mdclog_write(MDCLOG_INFO, "END of File Closed connection - descriptor = %d",
+                            message.peerInfo->fileDescriptor);
+            }
+            done = 1;
+            break;
+        }
+
+        if (loglevel >= MDCLOG_DEBUG) {
+            char printBuffer[KA_MESSAGE_SIZE]{};
+            char *tmp = printBuffer;
+            // for (size_t i = 0; i < (size_t)message.message.asnLength; ++i) {
+            //     snprintf(tmp, 3, "%02x", message.message.asndata[i]);
+            //     tmp += 2;
+            // }
+            // printBuffer[message.message.asnLength] = 0;
+            for (int i = 0; i < rcv_size; ++i) {
+                snprintf(tmp, 3, "%02x", multi_pdu_buf[i]);
+                tmp += 2;
+            }
+            printBuffer[rcv_size] = 0;
+            
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            mdclog_write(MDCLOG_DEBUG, "Before Encoding E2AP PDU for : %s, Read time is : %ld seconds, %ld nanoseconds, max sctp buffer size %d, ka msg size %d",
+                        message.peerInfo->enodbName, end.tv_sec - start.tv_sec, end.tv_nsec - start.tv_nsec, RECEIVE_SCTP_BUFFER_SIZE, KA_MESSAGE_SIZE);
+            // mdclog_write(MDCLOG_DEBUG, "PDU buffer length = %ld for : %s, data =  : %s ", message.message.asnLength, message.peerInfo->enodbName,
+            //             printBuffer);
+            mdclog_write(MDCLOG_DEBUG, "PDU buffer length = %d for : %s, data =  : %s ", rcv_size, message.peerInfo->enodbName,
+                        printBuffer);
+            clock_gettime(CLOCK_MONOTONIC, &decodestart);
+        }
+
+        // read until we received all the pdus
+        // int rcv_size = read(message.peerInfo->fileDescriptor, multi_pdu_buf, KA_MESSAGE_SIZE, 0);
+        int remaining_bytes = rcv_size;
+        int consumed_bytes = 0;
+        bool finished_with_break = false;
+
+        while (remaining_bytes>0){
+
+            // auto rval = asn_decode(nullptr, ATS_ALIGNED_BASIC_PER, &asn_DEF_E2AP_PDU, (void **) &pdu,
+            //                 message.message.asndata, message.message.asnLength);
+            // we instead decode the multiple buffer coming in an iterative way
+            auto rval = asn_decode(nullptr, ATS_ALIGNED_BASIC_PER, &asn_DEF_E2AP_PDU, (void **) &pdu,
+                            (void*)&multi_pdu_buf[consumed_bytes], remaining_bytes);
+            if (rval.code != RC_OK) {
+                mdclog_write(MDCLOG_ERR, "Error %d Decoding (unpack) E2AP PDU from RAN : %s", rval.code,
+                            message.peerInfo->enodbName);
+                //todo may need reset to pdu
+                // finished_with_break = true;
+                goto finish_reading_sctp;
+                // break;
+            }
+            // should copy data to rmrMessageBuffer so that it can be sent and further elaborate from the xapp
+            rmrMessageBuffer.sendMessage->len = message.message.asnLength = rval.consumed;
+            rmrMessageBuffer.sendMessage->payload = message.message.asndata = &multi_pdu_buf[consumed_bytes];
+            consumed_bytes+=(int)rval.consumed;
+            remaining_bytes = rcv_size - consumed_bytes;
+            mdclog_write(MDCLOG_DEBUG, "PDU size = %d & consumed bytes %d & remaining %d for : %s ", rcv_size, consumed_bytes, remaining_bytes, message.peerInfo->enodbName);
+
+            if (loglevel >= MDCLOG_DEBUG) {
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                mdclog_write(MDCLOG_DEBUG, "After Encoding E2AP PDU for : %s, Read time is : %ld seconds, %ld nanoseconds",
+                            message.peerInfo->enodbName, end.tv_sec - decodestart.tv_sec, end.tv_nsec - decodestart.tv_nsec);
+                char *printBuffer;
+                size_t size;
+                FILE *stream = open_memstream(&printBuffer, &size);
+                asn_fprint(stream, &asn_DEF_E2AP_PDU, pdu);
+                mdclog_write(MDCLOG_DEBUG, "Encoding E2AP PDU past : %s", printBuffer);
+                clock_gettime(CLOCK_MONOTONIC, &decodestart);
+            }
+            // send data to xapp
+            switch (pdu->present) {
+                case E2AP_PDU_PR_initiatingMessage: {//initiating message
+                    asnInitiatingRequest(pdu, sctpMap,message, rmrMessageBuffer);
+                    break;
+                }
+                case E2AP_PDU_PR_successfulOutcome: { //successful outcome
+                    asnSuccsesfulMsg(pdu, sctpMap, message,  rmrMessageBuffer);
+                    break;
+                }
+                case E2AP_PDU_PR_unsuccessfulOutcome: { //Unsuccessful Outcome
+                    asnUnSuccsesfulMsg(pdu, sctpMap, message, rmrMessageBuffer);
+                    break;
+                }
+                default:
+                    mdclog_write(MDCLOG_ERR, "Unknown index %d in E2AP PDU", pdu->present);
+                    break;
+            }
+            if (loglevel >= MDCLOG_DEBUG) {
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                mdclog_write(MDCLOG_DEBUG,
+                            "After processing message and sent to rmr for : %s, Read time is : %ld seconds, %ld nanoseconds",
+                            message.peerInfo->enodbName, end.tv_sec - decodestart.tv_sec, end.tv_nsec - decodestart.tv_nsec);
+            }
+            numOfMessages++;
+            if (pdu != nullptr) {
+                ASN_STRUCT_RESET(asn_DEF_E2AP_PDU, pdu);
+                //ASN_STRUCT_FREE(asn_DEF_E2AP_PDU, pdu);
+                //pdu = nullptr;
+            }
+        }
+        memset(multi_pdu_buf, 0, KA_MESSAGE_SIZE);
+        if (finished_with_break){
+            break;
+        }
+    }
+
+    finish_reading_sctp:
+
+    if (done) {
+        if (loglevel >= MDCLOG_INFO) {
+            mdclog_write(MDCLOG_INFO, "Closed connection - descriptor = %d", message.peerInfo->fileDescriptor);
+        }
+        message.message.asnLength = rmrMessageBuffer.sendMessage->len =
+                snprintf((char *)rmrMessageBuffer.sendMessage->payload,
+                        256,
+                        "%s|CU disconnected unexpectedly",
+                        message.peerInfo->enodbName);
+        message.message.asndata = rmrMessageBuffer.sendMessage->payload;
+
+        if (sendRequestToXapp(message,
+                            RIC_SCTP_CONNECTION_FAILURE,
+                            rmrMessageBuffer) != 0) {
+            mdclog_write(MDCLOG_ERR, "SCTP_CONNECTION_FAIL message failed to send to xAPP");
+        }
+
+        /* Closing descriptor make epoll remove it from the set of descriptors which are monitored. */
+        close(message.peerInfo->fileDescriptor);
+        cleanHashEntry((ConnectedCU_t *) events->data.ptr, sctpMap);
+    }
+    if (loglevel >= MDCLOG_DEBUG) {
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        mdclog_write(MDCLOG_DEBUG, "from receive SCTP to send RMR time is %ld seconds and %ld nanoseconds",
+                    end.tv_sec - start.tv_sec, end.tv_nsec - start.tv_nsec);
+
+    }
+    
 }
 
 /**
@@ -1046,6 +1320,52 @@ void cleanHashEntry(ConnectedCU_t *val, Sctp_Map_t *m) {
     free(val);
 }
 
+int saveSctpMsg(ConnectedCU_t *peerInfo, ReportingMessages_t &message, Sctp_Map_t *m) {
+    auto loglevel = mdclog_level_get();
+    int fd = peerInfo->fileDescriptor;
+    if (loglevel >= MDCLOG_DEBUG) {
+        mdclog_write(MDCLOG_DEBUG, "Send SCTP message for CU %s, %s",
+                     message.message.enodbName, __FUNCTION__);
+    }
+
+    // modified
+    managed_shared_memory segment(open_only, "E2termBuffer");
+    RanSendMessageBufferVector* ranMessageBufferVect = segment.find<RanSendMessageBufferVector> ("ranSendData");
+    ranMessageBufferVect->push_back(FormatedMessageBuffer_t{message.message, fd});
+    // end modification
+    return 1;
+}
+
+int sendSctpMsgMultiThread(sctp_params_t *params) {
+
+    managed_shared_memory segment(open_only, "E2termBuffer");
+    RanSendMessageBufferVector* ranMessageBufferVect = segment.find<RanSendMessageBufferVector> ("ranSendData");
+
+    while(true){
+        // enter the infinit cycle of checking if new data is available
+
+        if (ranMessageBufferVect!=0){
+            for (RanSendMessageBufferVector::iterator ranMessageBufferVectIt = ranMessageBufferVect->begin(); ranMessageBufferVectIt!=ranMessageBufferVect->end(); ++ranMessageBufferVectIt){
+                
+            }
+        }else{
+            mdclog_write(MDCLOG_ERR, "RAN Send Data buffer not found");
+        }
+    }
+
+    
+    
+    
+
+    
+
+    mdclog_write(MDCLOG_INFO, "Send SCTP message for CU %s, %s",
+                     message.message.enodbName, __FUNCTION__);
+
+
+    return 1;
+}
+
 /**
  *
  * @param fd file discriptor
@@ -1261,7 +1581,7 @@ int receiveDataFromSctp(struct epoll_event *events,
             std::string now_str = to_simple_string(now);
             // mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %ld",
             //              message.peerInfo->fileDescriptor, message.message.asnLength);
-            mdclog_write(MDCLOG_DEBUG, "Finish Read from SCTP %d fd message length = %ld, time %s for %s",
+            mdclog_write(MDCLOG_INFO, "Finish Read from send SCTP %d fd message length = %ld, time %s for %s",
                         message.peerInfo->fileDescriptor, message.message.asnLength, now_str.c_str(), message.peerInfo->enodbName);
         }
 
@@ -1295,7 +1615,7 @@ int receiveDataFromSctp(struct epoll_event *events,
         }
 
         if (loglevel >= MDCLOG_DEBUG) {
-            char printBuffer[40960]{};
+            char printBuffer[KA_MESSAGE_SIZE]{};
             char *tmp = printBuffer;
             for (size_t i = 0; i < (size_t)message.message.asnLength; ++i) {
                 snprintf(tmp, 3, "%02x", message.message.asndata[i]);
@@ -1393,6 +1713,132 @@ int receiveDataFromSctp(struct epoll_event *events,
     }
     return 0;
 }
+
+
+int receiveDataFromSctpMultiProcess(
+                        Sctp_Map_t *sctpMap,
+                        RmrMessagesBuffer_t &rmrMessageBuffer
+                        ) {
+    
+    ReportingMessages_t message {};
+    auto done = 0;
+    auto loglevel = mdclog_level_get();
+
+    // get the identity of the interface
+    message.peerInfo = (ConnectedCU_t *)events->data.ptr;
+
+    message.statCollector = StatCollector::GetInstance();
+    struct timespec start{0, 0};
+    struct timespec decodestart{0, 0};
+    struct timespec end{0, 0};
+
+    E2AP_PDU_t *pdu = nullptr;
+
+    unsigned char multi_pdu_buf[KA_MESSAGE_SIZE] = {0};
+
+
+    while (true) {
+        if (loglevel >= MDCLOG_DEBUG) {
+            mdclog_write(MDCLOG_DEBUG, "Start Read from SCTP %d fd", message.peerInfo->fileDescriptor);
+            clock_gettime(CLOCK_MONOTONIC, &start);
+            // mdclog_write(MDCLOG_DEBUG, "SCTP buffer max size %d ", KA_MESSAGE_SIZE);
+        }
+
+        // read the buffer directly to rmr payload
+        message.message.asndata = rmrMessageBuffer.sendMessage->payload;
+        message.message.asnLength = rmrMessageBuffer.sendMessage->len =
+                read(message.peerInfo->fileDescriptor, rmrMessageBuffer.sendMessage->payload, RECEIVE_SCTP_BUFFER_SIZE);
+        // int rcv_size = 0;
+        
+                
+        // int rcv_size = read(message.peerInfo->fileDescriptor, multi_pdu_buf, KA_MESSAGE_SIZE);
+
+        // modified
+
+        managed_shared_memory segment(open_only, "E2termBuffer");
+        //Find the array
+        RanRecvMessageBufferVector* ranMessageBufferVect = segment.find<RanRecvMessageBufferVector> ("ranRecvData");
+        ranMessageBufferVect->push_back(FormatedMessageBuffer_t{message.message, message.peerInfo->fileDescriptor});
+
+        // end modification
+
+        // we save the data to the shared memory
+        // store data to the shared buffer
+        // std::memcpy(sharedBufferData[*sharedBufferSize], multi_pdu_buf, rcv_size);
+
+        // (*sharedBufferSize) += rcv_size;
+    }
+}
+
+
+int receiveDataFromSctpMultiSave(struct epoll_event *events,
+                        Sctp_Map_t *sctpMap,
+                        int &numOfMessages,
+                        RmrMessagesBuffer_t &rmrMessageBuffer,
+                        struct timespec &ts) {
+    
+    //Open the managed segment
+    managed_shared_memory sm(open_only, "E2termBuffer");
+
+    //Find the vector using the c-string name
+    uint8_t *sharedBufferData = sm.find<uint8_t>("SharedBufferData").first;
+
+    int *sharedBufferSize = sm.find<int>("SharedBufferSize").first;
+    
+    /* We have data on the fd waiting to be read. Read and display it.
+ * We must read whatever data is available completely, as we are running
+ *  in edge-triggered mode and won't get a notification again for the same data. */
+    ReportingMessages_t message {};
+    auto done = 0;
+    auto loglevel = mdclog_level_get();
+
+    // get the identity of the interface
+    message.peerInfo = (ConnectedCU_t *)events->data.ptr;
+
+    message.statCollector = StatCollector::GetInstance();
+    struct timespec start{0, 0};
+    struct timespec decodestart{0, 0};
+    struct timespec end{0, 0};
+
+    E2AP_PDU_t *pdu = nullptr;
+
+    unsigned char multi_pdu_buf[KA_MESSAGE_SIZE] = {0};
+
+
+    while (true) {
+        if (loglevel >= MDCLOG_DEBUG) {
+            mdclog_write(MDCLOG_DEBUG, "Start Read from SCTP %d fd", message.peerInfo->fileDescriptor);
+            clock_gettime(CLOCK_MONOTONIC, &start);
+            // mdclog_write(MDCLOG_DEBUG, "SCTP buffer max size %d ", KA_MESSAGE_SIZE);
+        }
+
+        // read the buffer directly to rmr payload
+        message.message.asndata = rmrMessageBuffer.sendMessage->payload;
+        message.message.asnLength = rmrMessageBuffer.sendMessage->len =
+                read(message.peerInfo->fileDescriptor, rmrMessageBuffer.sendMessage->payload, RECEIVE_SCTP_BUFFER_SIZE);
+        // int rcv_size = 0;
+        
+                
+        // int rcv_size = read(message.peerInfo->fileDescriptor, multi_pdu_buf, KA_MESSAGE_SIZE);
+
+        // modified
+
+        managed_shared_memory segment(open_only, "E2termBuffer");
+        //Find the array
+        RanRecvMessageBufferVector* ranMessageBufferVect = segment.find<RanRecvMessageBufferVector> ("ranRecvData");
+        ranMessageBufferVect->push_back(FormatedMessageBuffer_t{message.message, message.peerInfo->fileDescriptor});
+
+        // end modification
+
+        // we save the data to the shared memory
+        // store data to the shared buffer
+        // std::memcpy(sharedBufferData[*sharedBufferSize], multi_pdu_buf, rcv_size);
+
+        // (*sharedBufferSize) += rcv_size;
+    }
+}
+
+
 int receiveDataFromSctpMulti(struct epoll_event *events,
                         Sctp_Map_t *sctpMap,
                         int &numOfMessages,
@@ -1481,7 +1927,7 @@ int receiveDataFromSctpMulti(struct epoll_event *events,
         }
 
         if (loglevel >= MDCLOG_DEBUG) {
-            char printBuffer[40960]{};
+            char printBuffer[KA_MESSAGE_SIZE]{};
             char *tmp = printBuffer;
             // for (size_t i = 0; i < (size_t)message.message.asnLength; ++i) {
             //     snprintf(tmp, 3, "%02x", message.message.asndata[i]);
@@ -1521,8 +1967,9 @@ int receiveDataFromSctpMulti(struct epoll_event *events,
                 mdclog_write(MDCLOG_ERR, "Error %d Decoding (unpack) E2AP PDU from RAN : %s", rval.code,
                             message.peerInfo->enodbName);
                 //todo may need reset to pdu
-                finished_with_break = true;
-                break;
+                // finished_with_break = true;
+                goto finish_reading_sctp;
+                // break;
             }
             // should copy data to rmrMessageBuffer so that it can be sent and further elaborate from the xapp
             rmrMessageBuffer.sendMessage->len = message.message.asnLength = rval.consumed;
@@ -1579,6 +2026,8 @@ int receiveDataFromSctpMulti(struct epoll_event *events,
         }
     }
 
+    finish_reading_sctp:
+
     if (done) {
         if (loglevel >= MDCLOG_INFO) {
             mdclog_write(MDCLOG_INFO, "Closed connection - descriptor = %d", message.peerInfo->fileDescriptor);
@@ -1606,6 +2055,8 @@ int receiveDataFromSctpMulti(struct epoll_event *events,
                      end.tv_sec - start.tv_sec, end.tv_nsec - start.tv_nsec);
 
     }
+    
+    
     return 0;
 }
 
@@ -1662,6 +2113,11 @@ static void buildAndsendSetupRequest(ReportingMessages_t &message,
         rmr_bytes2xact(rmrMsg, tx, strlen((const char *) tx));
 
         rmrMsg = rmr_send_msg(rmrMessageBuffer.rmrCtx, rmrMsg);
+        // modified
+        // managed_shared_memory segment(open_only, "E2termBuffer");
+        // RmrSendMessageBufferVector* xappMessageBufferVect = segment.find<RmrSendMessageBufferVector> ("xappSendData");
+        // xappMessageBufferVect->push_back(rmrMessageBuffer.sendMessage);
+        // end modification
         if (rmrMsg == nullptr) {
             mdclog_write(MDCLOG_ERR, "RMR failed to send returned nullptr");
         } else if (rmrMsg->state != 0) {
@@ -1920,9 +2376,9 @@ void asnInitiatingRequest(E2AP_PDU_t *pdu,
                         rmrMessageBuffer.sendMessage->sub_id = ie->value.choice.RICrequestID.ricRequestorID;
                         // rmrMessageBuffer.sendMessage->sub_id = (int)ie->value.choice.RICrequestID.ricInstanceID;
                         
-                        unsigned char *me_id;
-			unsigned char* me_id_ptr = rmr_get_meid(rmrMessageBuffer.sendMessage, me_id);
-			mdclog_write(MDCLOG_DEBUG, "Received MEID: %s, exit_status %d, ptr %s", me_id, exit_status, me_id_ptr);                        
+                        unsigned char *me_id;  
+                        unsigned char* me_id_ptr = rmr_get_meid(rmrMessageBuffer.sendMessage, me_id);
+                        mdclog_write(MDCLOG_DEBUG, "Received MEID: %s, exit_status %d, ptr %s", me_id, exit_status, me_id_ptr);                        
 
                         //ie->value.choice.RICrequestID.ricInstanceID;
                         if (mdclog_level_get() >= MDCLOG_DEBUG) {
@@ -2427,6 +2883,12 @@ int receiveXappMessages(Sctp_Map_t *sctpMap,
         rmrMessageBuffer.rcvMessage = rmr_alloc_msg(rmrMessageBuffer.rmrCtx, RECEIVE_XAPP_BUFFER_SIZE);
         return -2;
     }
+    // modified
+    // managed_shared_memory segment(open_only, "E2termBuffer");
+    // RanRecvMessageBufferVector* rmrXappMessageBufferVect = segment.find<RanRecvMessageBufferVector> ("xappRcvData");
+    // rmrXappMessageBufferVect->push_back(rmrMessageBuffer);
+    // end modification
+
     ReportingMessages_t message;
     message.message.direction = 'D';
     message.message.time.tv_nsec = ts.tv_nsec;
@@ -2579,6 +3041,11 @@ int receiveXappMessages(Sctp_Map_t *sctpMap,
             auto txLen = snprintf((char *) tx, sizeof tx, "%15ld", transactionCounter++);
             rmr_bytes2xact(rmrMessageBuffer.sendMessage, tx, txLen);
             rmrMessageBuffer.sendMessage = rmr_send_msg(rmrMessageBuffer.rmrCtx, rmrMessageBuffer.sendMessage);
+            // modified
+            // managed_shared_memory segment(open_only, "E2termBuffer");
+            // RmrSendMessageBufferVector* xappMessageBufferVect = segment.find<RmrSendMessageBufferVector> ("xappSendData");
+            // xappMessageBufferVect->push_back(rmrMessageBuffer.sendMessage);
+            // end modification
             if (rmrMessageBuffer.sendMessage == nullptr) {
                 rmrMessageBuffer.sendMessage = rmr_alloc_msg(rmrMessageBuffer.rmrCtx, RECEIVE_XAPP_BUFFER_SIZE);
                 mdclog_write(MDCLOG_ERR, "Failed to send E2_TERM_KEEP_ALIVE_RESP RMR message returned NULL");
@@ -2896,6 +3363,12 @@ int sendRmrMessage(RmrMessagesBuffer_t &rmrMessageBuffer, ReportingMessages_t &m
     buildJsonMessage(message);
 
     rmrMessageBuffer.sendMessage = rmr_send_msg(rmrMessageBuffer.rmrCtx, rmrMessageBuffer.sendMessage);
+
+    // modified
+    // managed_shared_memory segment(open_only, "E2termBuffer");
+    // RmrSendMessageBufferVector* xappMessageBufferVect = segment.find<RmrSendMessageBufferVector> ("xappSendData");
+    // xappMessageBufferVect->push_back(rmrMessageBuffer.sendMessage);
+    // end modification
 
     if (rmrMessageBuffer.sendMessage == nullptr) {
         rmrMessageBuffer.sendMessage = rmr_alloc_msg(rmrMessageBuffer.rmrCtx, RECEIVE_XAPP_BUFFER_SIZE);

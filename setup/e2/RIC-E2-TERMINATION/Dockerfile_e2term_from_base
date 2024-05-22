@@ -20,21 +20,49 @@
 #   This source code is part of the near-RT RIC (RAN Intelligent Controller)
 #   platform project (RICP).
 #
-FROM e2term-base:bronze as ricbuild
+# FROM e2term-base:bronze as ricbuild
+# FROM ubuntu:18.04
+
+FROM e2term-base:bronze
+
+
 
 WORKDIR /opt/e2/
 
 ARG BUILD_TYPE="Release"
 
+# COPY --from=e2term-base:bronze /opt/e2/ /opt/e2/
+
 # RUN mkdir -p /opt/e2/RIC-E2-TERMINATION/
 
 # COPY . /opt/e2/RIC-E2-TERMINATION/ 
 
-COPY ./sctpThread.cpp /opt/e2/RIC-E2-TERMINATION/sctpThread.cpp
-COPY ./sctpThread.h /opt/e2/RIC-E2-TERMINATION/sctpThread.h
+COPY ./sctpThread.cpp /opt/e2/sctpThread.cpp
+COPY ./sctpThread.h /opt/e2/sctpThread.h
+
+COPY ./config/config.conf /opt/e2/config
+
+COPY --from=e2term-base:bronze /usr/lib/x86_64-linux-gnu/libboost_system.so \
+    # /usr/lib/x86_64-linux-gnu/libboost_system.so.1.69.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_chrono.so \
+    # /usr/lib/x86_64-linux-gnu/libboost_chrono.so.1.69.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_date_time.so \
+    # /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.69.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_atomic.so \
+    # /usr/lib/x86_64-linux-gnu/libboost_atomic.so.1.69.0 \
+     /usr/lib/
+
+# COPY --from=ubuntu /usr/lib/libboost_system.so \
+#     /usr/lib/libboost_system.so.1.69.0 \
+#     /usr/lib/libboost_chrono.so \
+#     /usr/lib/libboost_chrono.so.1.69.0 \
+#     /usr/lib/libboost_date_time.so \
+#     /usr/lib/libboost_date_time.so.1.69.0 \
+#     /usr/lib/libboost_atomic.so \
+#     /usr/lib/libboost_atomic.so.1.69.0  /usr/lib/
 
 # apt-get update &&
-RUN make -j ${nproc} && make install && ldconfig \
+RUN cd /opt/e2/ && make clean && make -j ${nproc} && make install && ldconfig \
     && cd /opt/e2/ && /usr/local/bin/cmake -D CMAKE_BUILD_TYPE=$BUILD_TYPE . && make -j ${nproc} \
     && echo "3" > /opt/e2/rmr.verbose
 
@@ -44,4 +72,5 @@ ENV RMR_SEED_RT=dockerRouter.txt
 ENV E2TERM_POD_NAME=e2term
 RUN chmod +x /opt/e2/startup.sh
 EXPOSE 38000
-CMD ["sh", "-c", "./startup.sh"]
+# CMD ["sh", "-c", "./startup.sh"]
+CMD ["/bin/sh", "-c", "bash"]

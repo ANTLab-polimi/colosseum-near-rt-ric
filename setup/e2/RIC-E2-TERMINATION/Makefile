@@ -127,13 +127,13 @@ list_install_components/fast: list_install_components
 # The main all target
 all: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /opt/e2/CMakeFiles /opt/e2/CMakeFiles/progress.marks
-	$(MAKE) -f CMakeFiles/Makefile2 all
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 all
 	$(CMAKE_COMMAND) -E cmake_progress_start /opt/e2/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	$(MAKE) -f CMakeFiles/Makefile2 clean
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 clean
 .PHONY : clean
 
 # The main clean target
@@ -143,12 +143,12 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	$(MAKE) -f CMakeFiles/Makefile2 preinstall
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	$(MAKE) -f CMakeFiles/Makefile2 preinstall
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 preinstall
 .PHONY : preinstall/fast
 
 # clear depends
@@ -161,12 +161,12 @@ depend:
 
 # Build rule for target.
 teste2: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 teste2
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 teste2
 .PHONY : teste2
 
 # fast build rule for target.
 teste2/fast:
-	$(MAKE) -f CMakeFiles/teste2.dir/build.make CMakeFiles/teste2.dir/build
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/teste2.dir/build.make CMakeFiles/teste2.dir/build
 .PHONY : teste2/fast
 
 #=============================================================================
@@ -187,12 +187,12 @@ asn1ce2smcodec/fast:
 
 # Build rule for target.
 asn1codec: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 asn1codec
+	$(MAKE)  -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 asn1codec
 .PHONY : asn1codec
 
 # fast build rule for target.
 asn1codec/fast:
-	$(MAKE) -f CMakeFiles/asn1codec.dir/build.make CMakeFiles/asn1codec.dir/build
+	$(MAKE)  -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/asn1codec.dir/build.make CMakeFiles/asn1codec.dir/build
 .PHONY : asn1codec/fast
 
 #=============================================================================
@@ -200,12 +200,12 @@ asn1codec/fast:
 
 # Build rule for target.
 e2: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 e2
+	$(MAKE) -L/usr/libx86_64-linux-gnu -f CMakeFiles/Makefile2 e2
 .PHONY : e2
 
 # fast build rule for target.
 e2/fast:
-	$(MAKE) -f CMakeFiles/e2.dir/build.make CMakeFiles/e2.dir/build
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/e2.dir/build.make CMakeFiles/e2.dir/build
 .PHONY : e2/fast
 
 #=============================================================================
@@ -213,12 +213,12 @@ e2/fast:
 
 # Build rule for target.
 b64Test: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 b64Test
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 b64Test
 .PHONY : b64Test
 
 # fast build rule for target.
 b64Test/fast:
-	$(MAKE) -f CMakeFiles/b64Test.dir/build.make CMakeFiles/b64Test.dir/build
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/b64Test.dir/build.make CMakeFiles/b64Test.dir/build
 .PHONY : b64Test/fast
 
 #=============================================================================
@@ -226,7 +226,7 @@ b64Test/fast:
 
 # Build rule for target.
 setUpMessages: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 setUpMessages
+	$(MAKE)  -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 setUpMessages
 .PHONY : setUpMessages
 
 # fast build rule for target.
@@ -239,12 +239,12 @@ setUpMessages/fast:
 
 # Build rule for target.
 testConfigFile: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 testConfigFile
+	$(MAKE)  -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 testConfigFile
 .PHONY : testConfigFile
 
 # fast build rule for target.
 testConfigFile/fast:
-	$(MAKE) -f CMakeFiles/testConfigFile.dir/build.make CMakeFiles/testConfigFile.dir/build
+	$(MAKE)  -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/testConfigFile.dir/build.make CMakeFiles/testConfigFile.dir/build
 .PHONY : testConfigFile/fast
 
 #=============================================================================
@@ -252,12 +252,12 @@ testConfigFile/fast:
 
 # Build rule for target.
 sctpClient: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 sctpClient
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/Makefile2 sctpClient
 .PHONY : sctpClient
 
 # fast build rule for target.
 sctpClient/fast:
-	$(MAKE) -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/build
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/build
 .PHONY : sctpClient/fast
 
 RIC-E2-TERMINATION/3rdparty/oranE2/ANY.o: RIC-E2-TERMINATION/3rdparty/oranE2/ANY.c.o
@@ -329,7 +329,7 @@ RIC-E2-TERMINATION/3rdparty/oranE2/Cause.i: RIC-E2-TERMINATION/3rdparty/oranE2/C
 
 # target to preprocess a source file
 RIC-E2-TERMINATION/3rdparty/oranE2/Cause.c.i:
-	$(MAKE) -f CMakeFiles/asn1codec.dir/build.make CMakeFiles/asn1codec.dir/RIC-E2-TERMINATION/3rdparty/oranE2/Cause.c.i
+	$(MAKE)  -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/asn1codec.dir/build.make CMakeFiles/asn1codec.dir/RIC-E2-TERMINATION/3rdparty/oranE2/Cause.c.i
 .PHONY : RIC-E2-TERMINATION/3rdparty/oranE2/Cause.c.i
 
 RIC-E2-TERMINATION/3rdparty/oranE2/Cause.s: RIC-E2-TERMINATION/3rdparty/oranE2/Cause.c.s
@@ -338,7 +338,7 @@ RIC-E2-TERMINATION/3rdparty/oranE2/Cause.s: RIC-E2-TERMINATION/3rdparty/oranE2/C
 
 # target to generate assembly for a file
 RIC-E2-TERMINATION/3rdparty/oranE2/Cause.c.s:
-	$(MAKE) -f CMakeFiles/asn1codec.dir/build.make CMakeFiles/asn1codec.dir/RIC-E2-TERMINATION/3rdparty/oranE2/Cause.c.s
+	$(MAKE)  -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/asn1codec.dir/build.make CMakeFiles/asn1codec.dir/RIC-E2-TERMINATION/3rdparty/oranE2/Cause.c.s
 .PHONY : RIC-E2-TERMINATION/3rdparty/oranE2/Cause.c.s
 
 RIC-E2-TERMINATION/3rdparty/oranE2/CauseMisc.o: RIC-E2-TERMINATION/3rdparty/oranE2/CauseMisc.c.o
@@ -5801,7 +5801,7 @@ RIC-E2-TERMINATION/TEST/ConfigurationFileTest/testConfigFile.o: RIC-E2-TERMINATI
 
 # target to build an object file
 RIC-E2-TERMINATION/TEST/ConfigurationFileTest/testConfigFile.cpp.o:
-	$(MAKE) -f CMakeFiles/testConfigFile.dir/build.make CMakeFiles/testConfigFile.dir/RIC-E2-TERMINATION/TEST/ConfigurationFileTest/testConfigFile.cpp.o
+	$(MAKE)  -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/testConfigFile.dir/build.make CMakeFiles/testConfigFile.dir/RIC-E2-TERMINATION/TEST/ConfigurationFileTest/testConfigFile.cpp.o
 .PHONY : RIC-E2-TERMINATION/TEST/ConfigurationFileTest/testConfigFile.cpp.o
 
 RIC-E2-TERMINATION/TEST/ConfigurationFileTest/testConfigFile.i: RIC-E2-TERMINATION/TEST/ConfigurationFileTest/testConfigFile.cpp.i
@@ -5909,7 +5909,7 @@ RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.o: RIC-E2-TERMINATION/TEST
 
 # target to build an object file
 RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.o:
-	$(MAKE) -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.o
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.o
 .PHONY : RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.o
 
 RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.i: RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.i
@@ -5918,7 +5918,7 @@ RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.i: RIC-E2-TERMINATION/TEST
 
 # target to preprocess a source file
 RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.i:
-	$(MAKE) -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.i
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.i
 .PHONY : RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.i
 
 RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.s: RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.s
@@ -5927,7 +5927,7 @@ RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.s: RIC-E2-TERMINATION/TEST
 
 # target to generate assembly for a file
 RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.s:
-	$(MAKE) -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.s
+	$(MAKE) -L/usr/libx86_64-linux-gnu -lboost_system -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.s
 .PHONY : RIC-E2-TERMINATION/TEST/testAsn/sctpClient/sctpClient.cpp.s
 
 RIC-E2-TERMINATION/TEST/testAsn/setUpMessages/SetUpMessages.o: RIC-E2-TERMINATION/TEST/testAsn/setUpMessages/SetUpMessages.cpp.o
@@ -5985,9 +5985,9 @@ RIC-E2-TERMINATION/base64.s: RIC-E2-TERMINATION/base64.cpp.s
 
 # target to generate assembly for a file
 RIC-E2-TERMINATION/base64.cpp.s:
-	$(MAKE) -f CMakeFiles/e2.dir/build.make CMakeFiles/e2.dir/RIC-E2-TERMINATION/base64.cpp.s
-	$(MAKE) -f CMakeFiles/b64Test.dir/build.make CMakeFiles/b64Test.dir/RIC-E2-TERMINATION/base64.cpp.s
-	$(MAKE) -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/RIC-E2-TERMINATION/base64.cpp.s
+	$(MAKE)  -f CMakeFiles/e2.dir/build.make CMakeFiles/e2.dir/RIC-E2-TERMINATION/base64.cpp.s
+	$(MAKE)  -f CMakeFiles/b64Test.dir/build.make CMakeFiles/b64Test.dir/RIC-E2-TERMINATION/base64.cpp.s
+	$(MAKE)  -f CMakeFiles/sctpClient.dir/build.make CMakeFiles/sctpClient.dir/RIC-E2-TERMINATION/base64.cpp.s
 .PHONY : RIC-E2-TERMINATION/base64.cpp.s
 
 RIC-E2-TERMINATION/sctpThread.o: RIC-E2-TERMINATION/sctpThread.cpp.o
