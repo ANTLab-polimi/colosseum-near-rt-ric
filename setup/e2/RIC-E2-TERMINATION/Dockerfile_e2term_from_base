@@ -19,9 +19,6 @@
 #
 #   This source code is part of the near-RT RIC (RAN Intelligent Controller)
 #   platform project (RICP).
-#
-# FROM e2term-base:bronze as ricbuild
-# FROM ubuntu:18.04
 
 FROM e2term-base:bronze
 

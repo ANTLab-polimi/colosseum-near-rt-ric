@@ -20,7 +20,7 @@
 #   This source code is part of the near-RT RIC (RAN Intelligent Controller)
 #   platform project (RICP).
 #
-FROM wineslab/o-ran-sc-bldr-ubuntu18-c-go:9-u18.04 as ubuntu
+FROM wineslab/o-ran-sc-bldr-ubuntu18-c-go:9-u18.04 AS ubuntu
 
 WORKDIR /opt/e2/
 
