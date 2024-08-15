@@ -25,7 +25,7 @@
 #
 # NOTE: The valgrind false positive problem could also potentially be solved
 # with valgrind suppression files but that kind of approach may be fragile.
-FROM ubuntu:18.04 as cpputest-build
+FROM ubuntu:18.04 AS cpputest-build
 
 RUN apt-get update \
     && apt install -y \
