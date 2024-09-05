@@ -470,7 +470,7 @@ int main(const int argc, const char **argv) {
     std::vector<std::thread> threads(num_cpus);
 //    std::vector<std::thread> threads;
 
-    sctpParams.logLevel = MDCLOG_INFO;
+    sctpParams.logLevel = MDCLOG_DEBUG;
 
     num_cpus = 1;
     for (unsigned int i = 0; i < num_cpus; i++) {
@@ -1609,7 +1609,7 @@ int receiveDataFromSctp(struct epoll_event *events,
             mdclog_write(MDCLOG_DEBUG, "Encoding E2AP PDU past : %s", printBuffer);
             clock_gettime(CLOCK_MONOTONIC, &decodestart);
         }
-
+        mdclog_write(MDCLOG_DEBUG, "Index %d in E2AP PDU", pdu->present);
         switch (pdu->present) {
             case E2AP_PDU_PR_initiatingMessage: {//initiating message
                 asnInitiatingRequest(pdu, sctpMap,message, rmrMessageBuffer);
@@ -2174,6 +2174,7 @@ void asnInitiatingRequest(E2AP_PDU_t *pdu,
                           Sctp_Map_t *sctpMap,
                           ReportingMessages_t &message,
                           RmrMessagesBuffer_t &rmrMessageBuffer) {
+    mdclog_write(MDCLOG_DEBUG, "Index %d in E2AP PDU", pdu->present);
     auto logLevel = mdclog_level_get();
     auto procedureCode = ((InitiatingMessage_t *) pdu->choice.initiatingMessage)->procedureCode;
     if (logLevel >= MDCLOG_DEBUG) {

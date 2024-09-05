@@ -96,9 +96,14 @@ EOF
 fi
  E2TERM_CONFIG_BIND="--mount type=bind,source=$E2TERMCONFFILE,destination=/opt/e2/config/config.conf,ro"
 
-$SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term \
+# $SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term \
+#         --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
+#         $E2TERM_CONFIG_BIND \
+#         e2term:bronze
+
+
+$SUDO docker run -d -it --network=ric --ip $E2TERM_IP --name e2term -p ${RIC_IP}:${E2TERM_SCTP_PORT}:${E2TERM_SCTP_PORT}/sctp\
         --mount type=bind,source=$ROUTERFILE,destination=/opt/e2/dockerRouter.txt,ro \
-        $E2TERM_CONFIG_BIND \
-        e2term:bronze
+        $E2TERM_CONFIG_BIND e2term:bronze
 
 exit 0

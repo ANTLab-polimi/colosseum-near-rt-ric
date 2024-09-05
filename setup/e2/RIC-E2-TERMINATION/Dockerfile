@@ -24,7 +24,7 @@ FROM wineslab/o-ran-sc-bldr-ubuntu18-c-go:9-u18.04 AS ubuntu
 
 WORKDIR /opt/e2/
 
-ARG BUILD_TYPE="Release"
+ARG BUILD_TYPE="Release" 
 
 RUN mkdir -p /opt/e2/RIC-E2-TERMINATION/ \
 #    && mkdir -p /opt/e2/RIC-E2-TERMINATION/TEST/T1 \
@@ -82,6 +82,13 @@ RUN apt-get update && apt-get install -y net-tools iputils-ping curl tcpdump lib
 # RUN apt-get install -y build-essential 
 # RUN mkdir -p /opt/e2/config
 
+# the following are needed to compile e2term inside the Docker container
+RUN apt-get install -y libboost-all-dev libtbb-dev rapidjson-dev && rm -rf /var/lib/apt/lists/*
+RUN cd /opt/e2/RIC-E2-TERMINATION/3rdparty/pistache/build && make install
+RUN dpkg -i /opt/e2/cgreen_1.2.0_amd64.deb && dpkg -i /opt/e2/rmr_4.0.2_amd64.deb && \
+    dpkg -i /opt/e2/rmr-dev_4.0.2_amd64.deb && dpkg -i /opt/e2/mdclog_0.0.4-1_amd64.deb && \
+    dpkg -i /opt/e2/mdclog-dev_0.0.4-1_amd64.deb
+
 # COPY --from=ubuntu /opt/e2/e2 /opt/e2/e2
 COPY --from=ubuntu /opt/e2/ /opt/e2/
 COPY --from=ubuntu /opt/e2/rmr.verbose /tmp/rmr.verbose
@@ -138,12 +145,7 @@ COPY --from=ubuntu /usr/lib/libboost_log_setup.so \
 COPY --from=ubuntu /usr/local/bin/cmake /usr/local/bin/cmake
 COPY --from=ubuntu /usr/local/share/cmake-3.14 /usr/local/share/cmake-3.14
 
-# the following are needed to compile e2term inside the Docker container
-RUN apt-get install -y libboost-all-dev libtbb-dev rapidjson-dev && rm -rf /var/lib/apt/lists/*
-RUN cd /opt/e2/RIC-E2-TERMINATION/3rdparty/pistache/build && make install
-RUN dpkg -i /opt/e2/cgreen_1.2.0_amd64.deb && dpkg -i /opt/e2/rmr_4.0.2_amd64.deb && \
-    dpkg -i /opt/e2/rmr-dev_4.0.2_amd64.deb && dpkg -i /opt/e2/mdclog_0.0.4-1_amd64.deb && \
-    dpkg -i /opt/e2/mdclog-dev_0.0.4-1_amd64.deb
+
 
 WORKDIR /opt/e2/
 ENV LD_LIBRARY_PATH=/usr/local/lib
